@@ -538,8 +538,9 @@ namespace AutoTranslate.Core
             }
             if (exclusions.FileError != null)
                 SetMessage(Setting.Text(
-                    $"{Exclusions.FilePath} could not be read: {exclusions.FileError}",
-                    $"تعذّرت قراءة {Exclusions.FilePath}: {exclusions.FileError}"));
+                    "{file} could not be read: {error}",
+                    "تعذّرت قراءة {file}: {error}",
+                    "file", Exclusions.FilePath, "error", exclusions.FileError));
         }
 
         private void Retranslate()
@@ -1311,14 +1312,15 @@ namespace AutoTranslate.Core
                 File.WriteAllText(path, root.ToString(Formatting.Indented), new UTF8Encoding(false));
                 Mod.Log.Info($"Exported {keys.Count} keys and {texts.Count} interface texts to {path}");
                 SetMessage(Setting.Text(
-                    $"Exported {keys.Count} mod texts and {texts.Count} interface texts to {path}",
-                    $"صُدِّر {keys.Count} نصاً من المودات و{texts.Count} نصاً من الواجهات إلى {path}"));
+                    "Exported {keys} mod texts and {texts} interface texts to {path}",
+                    "صُدِّر {keys} نصاً من المودات و{texts} نصاً من الواجهات إلى {path}",
+                    "keys", keys.Count, "texts", texts.Count, "path", path));
                 Setting.OpenFolder(Paths.ExportDir);
             }
             catch (Exception e)
             {
                 Mod.Log.Warn(e, "Exporting untranslated texts failed");
-                SetMessage(Setting.Text("Export failed: " + e.Message, "فشل التصدير: " + e.Message));
+                SetMessage(Setting.Text("Export failed: {error}", "فشل التصدير: {error}", "error", e.Message));
             }
         }
 
@@ -1364,14 +1366,15 @@ namespace AutoTranslate.Core
                 File.Move(temp, path);
                 Mod.Log.Info($"Exported {mods.Count} mods to {path}");
                 SetMessage(Setting.Text(
-                    $"Exported {mods.Count} mods ({s_ExcludedMods} excluded) to {path}",
-                    $"صُدِّرت قائمة {mods.Count} مود ({s_ExcludedMods} مستثنى) إلى {path}"));
+                    "Exported {mods} mods ({excluded} excluded) to {path}",
+                    "صُدِّرت قائمة {mods} مود ({excluded} مستثنى) إلى {path}",
+                    "mods", mods.Count, "excluded", s_ExcludedMods, "path", path));
                 Setting.OpenFolder(Paths.DataDir);
             }
             catch (Exception e)
             {
                 Mod.Log.Warn(e, "Exporting the mod list failed");
-                SetMessage(Setting.Text("Export failed: " + e.Message, "فشل التصدير: " + e.Message));
+                SetMessage(Setting.Text("Export failed: {error}", "فشل التصدير: {error}", "error", e.Message));
             }
         }
     }

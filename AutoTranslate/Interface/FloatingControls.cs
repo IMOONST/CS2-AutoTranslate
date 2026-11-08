@@ -122,6 +122,7 @@ namespace AutoTranslate.Interface
             var root = new JObject
             {
                 ["arabic"] = OptionsLocalization.IsArabic(),
+                ["lang"] = OptionsLocalization.Language(),
                 ["show"] = settings == null || settings.ShowFloatingButton,
                 ["x"] = settings?.ButtonX ?? -1,
                 ["y"] = settings?.ButtonY ?? -1,

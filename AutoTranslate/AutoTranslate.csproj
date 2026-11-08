@@ -47,6 +47,10 @@
 		<Exec Command="npm install --no-audit --no-fund" WorkingDirectory="UI" Condition="!Exists('UI/node_modules')" />
 		<Exec Command="npm run build" WorkingDirectory="UI" />
 	</Target>
+	<!--Interface languages (keyed by the English text; also imported by the UI): embedded as i18n.<code>.json-->
+	<ItemGroup>
+		<EmbeddedResource Include="i18n\*.json" LogicalName="i18n.%(Filename).json" />
+	</ItemGroup>
 	<ItemGroup>
 		<Compile Remove="UI\**" />
 		<None Remove="UI\**" />

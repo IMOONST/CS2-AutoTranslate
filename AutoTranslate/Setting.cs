@@ -14,7 +14,7 @@ using Game.UI.Widgets;
 
 namespace AutoTranslate
 {
-    /// <summary>Auto Translate's page in the game's Options (served in Arabic or English, see <see cref="OptionsLocalization"/>).</summary>
+    /// <summary>Auto Translate's page in the game's Options (served in the interface language, see <see cref="OptionsLocalization"/>).</summary>
     [FileLocation(nameof(AutoTranslate))]
     [SettingsUIGroupOrder(kGeneralGroup, kEngineGroup, kExclusionsGroup, kMaintenanceGroup, kStatusGroup)]
     [SettingsUIShowGroupName(kGeneralGroup, kEngineGroup, kExclusionsGroup, kMaintenanceGroup, kStatusGroup)]
@@ -71,6 +71,11 @@ namespace AutoTranslate
         /// <summary>The floating Auto Translate button while playing (drag it anywhere; click for its menu).</summary>
         [SettingsUISection(kSection, kGeneralGroup)]
         public bool ShowFloatingButton { get; set; }
+
+        /// <summary>The language of this page and the floating button: "auto" (the game's), "windows", or a code of <see cref="UiLanguages.Codes"/>.</summary>
+        [SettingsUIDropdown(typeof(Setting), nameof(GetInterfaceLanguageItems))]
+        [SettingsUISection(kSection, kGeneralGroup)]
+        public string InterfaceLanguage { get; set; }
 
         [SettingsUIButton]
         [SettingsUISection(kSection, kGeneralGroup)]
@@ -262,7 +267,7 @@ namespace AutoTranslate
 
         // ------------------------------------------------------------------ option page helpers
 
-        public int GetStatusVersion() => AutoTranslateSystem.StatusVersion * 3 + (OptionsLocalization.IsArabic() ? 1 : 0);
+        public int GetStatusVersion() => AutoTranslateSystem.StatusVersion * 16 + Array.IndexOf(UiLanguages.Codes, OptionsLocalization.Language()) + 1;
 
         public bool IsManualLanguageHidden() => TargetMode != TargetLanguageMode.Manual;
 
@@ -274,6 +279,18 @@ namespace AutoTranslate
         public bool IsRegionHidden() => Provider != ProviderKind.Microsoft;
 
         /// <summary>The languages of the Manual dropdown, by their own names.</summary>
+        public DropdownItem<string>[] GetInterfaceLanguageItems()
+        {
+            var items = new List<DropdownItem<string>>(UiLanguages.Codes.Length + 2)
+            {
+                new DropdownItem<string> { value = "auto", displayName = LocalizedString.Value(Text("Auto (game language)", "تلقائي (لغة اللعبة)")) },
+                new DropdownItem<string> { value = "windows", displayName = LocalizedString.Value(Text("Windows language", "لغة ويندوز")) },
+            };
+            for (int i = 0; i < UiLanguages.Codes.Length; i++)
+                items.Add(new DropdownItem<string> { value = UiLanguages.Codes[i], displayName = LocalizedString.Value(UiLanguages.NativeNames[i]) });
+            return items.ToArray();
+        }
+
         public DropdownItem<string>[] GetLanguageItems()
         {
             var codes = LanguageCodes.Supported;
@@ -305,6 +322,7 @@ namespace AutoTranslate
             Enabled = true;
             TargetMode = TargetLanguageMode.Auto;
             ManualLanguage = "ar";
+            InterfaceLanguage = "auto";
             TranslateInterfaces = true;
             ShowFloatingButton = true;
             ButtonX = -1;
@@ -327,8 +345,16 @@ namespace AutoTranslate
         /// <summary>Registers the options page text (Arabic or English) in every game locale.</summary>
         public static void RegisterLocales(Setting setting) => OptionsLocalization.Register(setting);
 
-        /// <summary><paramref name="en"/> or <paramref name="ar"/>, by the options page language.</summary>
-        internal static string Text(string en, string ar) => OptionsLocalization.IsArabic() ? ar : en;
+        /// <summary>
+        /// <paramref name="en"/> in the interface language (<paramref name="ar"/> for Arabic, i18n/&lt;code&gt;.json for the
+        /// others), with its {name} placeholders filled from <paramref name="pairs"/> (name, value, name, value…).
+        /// </summary>
+        internal static string Text(string en, string ar, params object[] pairs)
+        {
+            var language = OptionsLocalization.Language();
+            var template = language == UiLanguages.Arabic ? ar : UiLanguages.Translate(language, en);
+            return pairs.Length == 0 ? template : UiLanguages.Format(template, pairs);
+        }
 
         public static void OpenFolder(string dir)
         {
@@ -398,8 +424,9 @@ namespace AutoTranslate
             int terms = exclusions?.Terms.Count ?? 0;
             int texts = exclusions?.Texts.Count ?? 0;
             return Text(
-                $"Mods with translatable texts: {mods} ({excluded} excluded) — \"Export mod list\" shows their names. Protected terms: {terms}; excluded texts: {texts}.",
-                $"مودات فيها نصوص قابلة للترجمة: {mods} (المستثنى منها {excluded}) — «تصدير قائمة المودات» يعرض أسماءها. مصطلحات محمية: {terms}؛ نصوص مستثناة: {texts}.");
+                "Mods with translatable texts: {mods} ({excluded} excluded) — \"Export mod list\" shows their names. Protected terms: {terms}; excluded texts: {texts}.",
+                "مودات فيها نصوص قابلة للترجمة: {mods} (المستثنى منها {excluded}) — «تصدير قائمة المودات» يعرض أسماءها. مصطلحات محمية: {terms}؛ نصوص مستثناة: {texts}.",
+                "mods", mods, "excluded", excluded, "terms", terms, "texts", texts);
         }
 
         private static string DescribeSaved()
@@ -409,7 +436,7 @@ namespace AutoTranslate
             int count = service.SavedCount;
             if (count < 0) return Text("loading…", "جارٍ التحميل…");
             long bytes = service.SavedBytes;
-            return Text($"Saved translations: {count} ({FormatSize(bytes, false)})", $"الترجمات المحفوظة: {count} ({FormatSize(bytes, true)})");
+            return Text("Saved translations: {count} ({size})", "الترجمات المحفوظة: {count} ({size})", "count", count, "size", FormatSize(bytes, OptionsLocalization.Language() == UiLanguages.Arabic));
         }
 
         private static string FormatSize(long bytes, bool arabic)
@@ -470,8 +497,8 @@ namespace AutoTranslate
                 return name + " — " + Text("paused (the service refused requests; retrying with growing waits)", "متوقف مؤقتاً (الخدمة رفضت الطلبات؛ يعيد المحاولة بفترات انتظار متزايدة)");
             int pending = service.PendingCount;
             if (pending > 0)
-                return name + " — " + Text($"translating ({pending} in queue)", $"يترجم ({pending} في الانتظار)");
-            return name + " — " + Text($"ready ({service.TranslatedThisSession} translated this session)", $"جاهز ({service.TranslatedThisSession} تُرجمت في هذه الجلسة)");
+                return name + " — " + Text("translating ({pending} in queue)", "يترجم ({pending} في الانتظار)", "pending", pending);
+            return name + " — " + Text("ready ({count} translated this session)", "جاهز ({count} تُرجمت في هذه الجلسة)", "count", service.TranslatedThisSession);
         }
 
         private static string ProviderName(ProviderKind kind)
@@ -490,10 +517,11 @@ namespace AutoTranslate
     /// <summary>The options page text: (id, English, Arabic).</summary>
     internal static class OptionsText
     {
-        public static Dictionary<string, string> Build(Setting s, bool arabic)
+        public static Dictionary<string, string> Build(Setting s, string language)
         {
             var d = new Dictionary<string, string>();
-            void Add(string id, string en, string ar) => d[id] = arabic ? ar : en;
+            bool arabic = language == UiLanguages.Arabic;
+            void Add(string id, string en, string ar) => d[id] = arabic ? ar : UiLanguages.Translate(language, en);
             void Option(string name, string labelEn, string labelAr, string descEn, string descAr)
             {
                 Add(s.GetOptionLabelLocaleID(name), labelEn, labelAr);
@@ -559,10 +587,13 @@ namespace AutoTranslate
                 "يترجم أيضاً النصوص التي تعرضها لوحات ونوافذ المودات مباشرة دون نظام الترجمة في اللعبة. واجهة اللعبة نفسها لا تتغير أبداً.");
 
             Option(nameof(Setting.ShowFloatingButton), "Floating button", "الأيقونة العائمة",
-                "Shows the Auto Translate button while you play. Drag it anywhere; click it for its menu: turn translation on or off, " +
-                "and the click mode, where clicking a mod's window switches its translation off (click again to bring it back).",
-                "يُظهر أيقونة المترجم أثناء اللعب. اسحبها لأي مكان، واضغط عليها لتظهر قائمتها: تشغيل الترجمة أو إيقافها، " +
-                "ووضع التحكم بالضغط: تضغط على نافذة أي مود فتتوقف ترجمته، وتضغط مرة ثانية فتعود.");
+                "Shows the Auto Translate button while you play. Drag it anywhere; click it for its menu: turn translation on or off, choose the language, " +
+                "and the click mode, where clicking a mod's window lets you show it translated, in its original text, or in another language.",
+                "يُظهر أيقونة المترجم أثناء اللعب. اسحبها لأي مكان، واضغط عليها لتظهر قائمتها: تشغيل الترجمة أو إيقافها، واختيار اللغة، " +
+                "ووضع التحكم بالضغط: تضغط على نافذة أي مود وتختار كيف تظهر: مترجمة، أو بالأصل، أو بلغة ثانية.");
+            Option(nameof(Setting.InterfaceLanguage), "Interface language", "لغة الواجهة",
+                "The language of this page and the floating button (not of the translations). Auto follows the game's language, Windows language follows your computer, or pick one. A language the mod does not have shows in English.",
+                "لغة هذه الصفحة والأيقونة العائمة (وليست لغة الترجمة). «تلقائي» يتبع لغة اللعبة، و«لغة ويندوز» يتبع لغة جهازك، أو اختر لغة بعينها. إذا لم تكن اللغة من لغات المود تظهر الإنجليزية.");
             Option(nameof(Setting.ResetButtonPosition), "Reset button position", "إرجاع الأيقونة لمكانها",
                 "Puts the floating button back in its default place (and shows it if it was hidden).",
                 "يعيد الأيقونة العائمة إلى مكانها الافتراضي (ويُظهرها إن كانت مخفية).");
@@ -632,7 +663,7 @@ namespace AutoTranslate
         }
     }
 
-    /// <summary>One source per game locale that serves the options page in Arabic or English, whatever the game's language.</summary>
+    /// <summary>One source per game locale that serves the options page in the interface language, whatever the game's language.</summary>
     internal sealed class OptionsLocaleSource : IDictionarySource
     {
         private readonly Setting m_Setting;
@@ -645,14 +676,14 @@ namespace AutoTranslate
 
         public string LocaleId { get; }
 
-        /// <summary>True when the last read served Arabic; null before the first read.</summary>
-        public bool? ServedArabic { get; private set; }
+        /// <summary>The interface language of the last read; null before the first read.</summary>
+        public string ServedLanguage { get; private set; }
 
         public IEnumerable<KeyValuePair<string, string>> ReadEntries(IList<IDictionaryEntryError> errors, Dictionary<string, int> indexCounts)
         {
-            bool arabic = OptionsLocalization.IsArabic();
-            ServedArabic = arabic;
-            return OptionsText.Build(m_Setting, arabic);
+            var language = OptionsLocalization.Language();
+            ServedLanguage = language;
+            return OptionsText.Build(m_Setting, language);
         }
 
         public void Unload()
@@ -663,8 +694,7 @@ namespace AutoTranslate
     }
 
     /// <summary>
-    /// Registers the options page text and keeps it in the page language: Arabic when the game is in Arabic or
-    /// translation is running into Arabic; English otherwise.
+    /// Registers the options page text and keeps it in the interface language (see <see cref="Language"/>).
     /// </summary>
     internal static class OptionsLocalization
     {
@@ -673,22 +703,20 @@ namespace AutoTranslate
         private static string s_LastReloadAttempt;
         private static bool s_Reloading;
 
-        public static bool IsArabic()
+        /// <summary>The interface language now (a code of <see cref="UiLanguages.Codes"/>): the player's choice, Windows', or the game's.</summary>
+        public static string Language()
         {
-            try
+            var choice = (Mod.Settings?.InterfaceLanguage ?? "auto").Trim();
+            if (string.Equals(choice, "windows", StringComparison.OrdinalIgnoreCase)) return UiLanguages.Windows();
+            if (choice.Length > 0 && !string.Equals(choice, "auto", StringComparison.OrdinalIgnoreCase))
             {
-                var locale = GameManager.instance?.localizationManager?.activeLocaleId;
-                if (locale != null && locale.StartsWith("ar", StringComparison.OrdinalIgnoreCase)) return true;
+                foreach (var code in UiLanguages.Codes)
+                    if (string.Equals(code, choice, StringComparison.OrdinalIgnoreCase)) return code;
             }
-            catch (Exception)
-            {
-                // No active dictionary yet.
-            }
-            // The game's language decides; the one exception is translation running into Arabic (the game has no
-            // Arabic of its own). Windows' language alone no longer turns the page Arabic.
-            var target = TranslationService.Instance?.TargetLanguage;
-            return !string.IsNullOrEmpty(target) && TextRules.SameLanguage(target, "ar");
+            return UiLanguages.Game();
         }
+
+        public static bool IsArabic() => Language() == UiLanguages.Arabic;
 
         public static void Register(Setting setting)
         {
@@ -726,13 +754,13 @@ namespace AutoTranslate
                 EnsureAllLocales();
                 return;
             }
-            bool arabic = IsArabic();
-            if (source.ServedArabic == arabic)
+            var language = Language();
+            if (source.ServedLanguage == language)
             {
                 s_LastReloadAttempt = null;
                 return;
             }
-            var attempt = active + (arabic ? "|ar" : "|en");
+            var attempt = active + "|" + language;
             if (attempt == s_LastReloadAttempt) return;
             s_LastReloadAttempt = attempt;
             s_Reloading = true;

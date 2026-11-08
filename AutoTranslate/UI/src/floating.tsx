@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { bindValue, trigger, useValue } from "cs2/api";
 import mod from "mod.json";
 import { collectTexts } from "hook";
+import de from "../../i18n/de.json";
+import es from "../../i18n/es.json";
+import fr from "../../i18n/fr.json";
+import it from "../../i18n/it.json";
+import ja from "../../i18n/ja.json";
+import ko from "../../i18n/ko.json";
+import pl from "../../i18n/pl.json";
+import ptBR from "../../i18n/pt-BR.json";
+import ru from "../../i18n/ru.json";
+import zhHans from "../../i18n/zh-HANS.json";
+import zhHant from "../../i18n/zh-HANT.json";
 
 /*
  * The floating Auto Translate button (C#: Interface/FloatingControls.cs).
@@ -29,6 +40,8 @@ interface Entry {
 
 interface Controls {
   arabic: boolean;
+  /** The interface language code ("en", "ar", "de", "zh-HANS"…). */
+  lang: string;
   show: boolean;
   x: number;
   y: number;
@@ -74,45 +87,64 @@ const parse = <T,>(json: string, fallback: T): T => {
 };
 
 const DEFAULT_CONTROLS: Controls = {
-  arabic: false, show: false, x: -1, y: -1, enabled: false, interfaces: false, mode: "Auto", manual: "", target: "",
+  arabic: false, lang: "en", show: false, x: -1, y: -1, enabled: false, interfaces: false, mode: "Auto", manual: "", target: "",
   targetName: "", translated: 0, waiting: 0, entries: [],
 };
 
-const TEXT = {
-  en: {
-    title: "Auto Translate",
-    on: "Translation is on",
-    off: "Translation is off",
-    turnOff: "Turn off",
-    turnOn: "Turn on",
-    language: "Translate into",
-    modes: { Auto: "Automatic", GameLanguage: "Game language", SystemLanguage: "Windows language", Manual: "Choose" },
-    current: (name: string) => (name ? `Now: ${name}` : "No target language (the game and Windows are in English)."),
-    pick: "Click mode",
-    pickHint: "Click a mod window to choose its language: translated, original, or another language",
-    pickOn: "Click mode is on",
-    leave: "Leave",
-    status: (t: number, w: number) => `Translated ${t} · waiting ${w}`,
-    custom: "Mods and windows with their own setting",
-    none: "None yet: every mod uses the main translation.",
-    restore: "Reset",
-    kindMod: "mod",
-    kindPanel: "window",
-    originalTag: "original",
-    hide: "Hide button",
-    hideHint: "The options page shows it again (Floating button).",
-    close: "Close",
-    chooseTitle: (kind: string) => (kind === "mod" ? "Show this mod:" : "Show this window:"),
-    optDefault: (name: string) => (name ? `Main translation (${name})` : "Main translation"),
-    optOriginal: "Original (not translated)",
-    optOther: "Another language:",
-    resDefault: (l: string) => `Back to the main translation: ${l}`,
-    resOriginal: (l: string) => `Original text: ${l}`,
+type Tr = (en: string) => string;
+const fill = (template: string, values: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (m, k) => (k in values ? String(values[k]) : m));
+
+/** The menu texts through tr (English source; other languages from i18n/<code>.json, keyed by the English text). */
+const buildText = (tr: Tr) => ({
+    title: tr("Auto Translate"),
+    on: tr("Translation is on"),
+    off: tr("Translation is off"),
+    turnOff: tr("Turn off"),
+    turnOn: tr("Turn on"),
+    language: tr("Translate into"),
+    modes: { Auto: tr("Automatic"), GameLanguage: tr("Game language"), SystemLanguage: tr("Windows language"), Manual: tr("Choose") },
+    current: (name: string) => (name ? fill(tr("Now: {name}"), { name }) : tr("No target language (the game and Windows are in English).")),
+    pick: tr("Click mode"),
+    pickHint: tr("Click a mod window to choose its language: translated, original, or another language"),
+    pickOn: tr("Click mode is on"),
+    leave: tr("Leave"),
+    status: (t: number, w: number) => fill(tr("Translated {translated} · waiting {waiting}"), { translated: t, waiting: w }),
+    custom: tr("Mods and windows with their own setting"),
+    none: tr("None yet: every mod uses the main translation."),
+    restore: tr("Reset"),
+    kindMod: tr("mod"),
+    kindPanel: tr("window"),
+    originalTag: tr("original"),
+    hide: tr("Hide button"),
+    hideHint: tr("The options page shows it again (Floating button)."),
+    close: tr("Close"),
+    chooseTitle: (kind: string) => (kind === "mod" ? tr("Show this mod:") : tr("Show this window:")),
+    optDefault: (name: string) => (name ? fill(tr("Main translation ({name})"), { name }) : tr("Main translation")),
+    optOriginal: tr("Original (not translated)"),
+    optOther: tr("Another language:"),
+    resDefault: (l: string) => fill(tr("Back to the main translation: {label}"), { label: l }),
+    resOriginal: (l: string) => fill(tr("Original text: {label}"), { label: l }),
     resLanguage: (l: string, n: string) => `${l} → ${n}`,
-    resNone: "This is a game window, or it has nothing to translate.",
-    resError: "Could not save exclusions.json (see the log).",
-    banner: "Click a mod window to choose how it is shown. Esc or right click to leave.",
-  },
+    resNone: tr("This is a game window, or it has nothing to translate."),
+    resError: tr("Could not save exclusions.json (see the log)."),
+    banner: tr("Click a mod window to choose how it is shown. Esc or right click to leave."),
+});
+
+const TABLES: Record<string, Record<string, string>> = {
+  de, es, fr, it, ja, ko, pl, "pt-BR": ptBR, ru, "zh-HANS": zhHans, "zh-HANT": zhHant,
+};
+const BUILT: Record<string, ReturnType<typeof buildText>> = {};
+/** The menu texts in an interface language code (English for an unknown one). */
+const textFor = (code: string) => {
+  if (code === "ar") return TEXT.ar;
+  const table = TABLES[code];
+  if (!table) return TEXT.en;
+  return BUILT[code] || (BUILT[code] = buildText((en) => table[en] || en));
+};
+
+const TEXT = {
+  en: buildText((en) => en),
   ar: {
     title: "المترجم التلقائي",
     on: "الترجمة مفعّلة",
@@ -210,11 +242,13 @@ const S = {
     backgroundColor: color, border: "2rem solid rgba(24,33,48,1)",
   }) as any,
   menu: {
-    position: "absolute", width: "320rem", padding: "10rem 12rem 12rem 12rem", borderRadius: "8rem",
+    position: "absolute", width: "280rem", padding: "8rem 10rem 10rem 10rem", borderRadius: "8rem",
     backgroundColor: "rgba(24, 33, 48, 0.97)", color: "#ffffff", boxShadow: "0 4rem 16rem rgba(0,0,0,0.5)",
     pointerEvents: "auto",
   } as any,
-  header: { display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "8rem" } as any,
+  header: { display: "flex", flexDirection: "row", alignItems: "center", marginBottom: "6rem" } as any,
+  /** The menu's scrolling part (everything under the title). */
+  body: (maxHeight: number) => ({ maxHeight: maxHeight + "px", overflowY: "scroll", paddingRight: "4rem", paddingLeft: "4rem" }) as any,
   title: { flex: 1, fontSize: "15rem", fontWeight: "bold", color: "#a6dcff" } as any,
   close: { width: "22rem", height: "22rem", fontSize: "16rem", textAlign: "center", color: "rgba(255,255,255,0.8)", cursor: "pointer" } as any,
   row: { display: "flex", flexDirection: "row", alignItems: "center", marginTop: "6rem" } as any,
@@ -232,7 +266,7 @@ const S = {
     backgroundColor: active ? "rgba(79,195,138,0.9)" : "rgba(255,255,255,0.12)", color: "#ffffff",
   }) as any,
   wide: { marginTop: "8rem", padding: "6rem 10rem", borderRadius: "4rem", fontSize: "13rem", textAlign: "center", cursor: "pointer" } as any,
-  section: { marginTop: "10rem", paddingTop: "8rem", borderTop: "1rem solid rgba(255,255,255,0.12)" } as any,
+  section: { marginTop: "8rem", paddingTop: "6rem", borderTop: "1rem solid rgba(255,255,255,0.12)" } as any,
   list: (height: number) => ({ maxHeight: height + "rem", overflowY: "scroll", marginTop: "4rem" }) as any,
   item: { display: "flex", flexDirection: "row", alignItems: "center", marginTop: "4rem" } as any,
   itemLabel: { flex: 1, fontSize: "12.5rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } as any,
@@ -266,7 +300,7 @@ interface Rect { left: number; top: number; width: number; height: number; }
 /** The choice popup's size in pixels (300rem wide, about 440rem high at 1080p). */
 const chooserSize = () => {
   const scale = (window.innerHeight || 1080) / 1080;
-  return { w: 330 * scale, h: 450 * scale };
+  return { w: 330 * scale, h: 390 * scale };
 };
 
 /**
@@ -304,7 +338,7 @@ export const FloatingButton = () => {
   const controls = parse<Controls>(useValue(controls$), DEFAULT_CONTROLS);
   const languages = parse<Language[]>(useValue(languages$), []);
   const pickJson = useValue(pickResult$);
-  const text = controls.arabic ? TEXT.ar : TEXT.en;
+  const text = textFor(controls.lang || (controls.arabic ? "ar" : "en"));
   const dir = controls.arabic ? "rtl" : "ltr";
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -472,6 +506,11 @@ export const FloatingButton = () => {
   else menuStyle.left = "0px";
   if (anchorY > height / 2) menuStyle.bottom = BUTTON_SIZE + 8 + "rem";
   else menuStyle.top = BUTTON_SIZE + 8 + "rem";
+  // The menu never leaves the screen: its body scrolls within the room between the button and the screen edge
+  // (at most about 440 at 1080p, so it stays a compact box even on a tall screen).
+  const unit = height / 1080;
+  const room = anchorY > height / 2 ? anchorY - (8 + 16) * unit : height - anchorY - (BUTTON_SIZE + 8 + 16) * unit;
+  const bodyHeight = Math.max(160 * unit, Math.min(440 * unit, room - 44 * unit));
 
   // The choice popup beside the clicked window (placed by chooserPlace), kept on screen; its title bar drags it.
   const chooserStyle: any = { ...S.chooser };
@@ -533,7 +572,7 @@ export const FloatingButton = () => {
           <div style={S.option(chooser.current === "default")} onClick={() => choose("default")}>{text.optDefault(controls.targetName)}</div>
           <div style={S.option(chooser.current === "original")} onClick={() => choose("original")}>{text.optOriginal}</div>
           <div style={{ ...S.small, marginTop: "8rem" }}>{text.optOther}</div>
-          <div style={S.list(230)}>
+          <div style={S.list(170)}>
             {otherLanguages.map((l) => (
               <div key={l.code} style={S.option(chooser.current.toLowerCase() === l.code.toLowerCase())} onClick={() => choose(l.code)}>
                 {l.name}
@@ -556,6 +595,7 @@ export const FloatingButton = () => {
               <div style={S.title}>{text.title}</div>
               <div style={S.close} title={text.close} onClick={() => setMenuOpen(false)}>×</div>
             </div>
+            <div style={S.body(bodyHeight)}>
 
             <div style={S.row}>
               <div style={S.label}>{controls.enabled ? text.on : text.off}</div>
@@ -573,7 +613,7 @@ export const FloatingButton = () => {
                 ))}
               </div>
               {controls.mode === "Manual" && (
-                <div style={S.list(140)}>
+                <div style={S.list(120)}>
                   {languages.map((l) => (
                     <div key={l.code} style={S.option(controls.manual.toLowerCase() === l.code.toLowerCase())} onClick={() => trigger(group, "setManualLanguage", l.code)}>
                       {l.name}
@@ -597,7 +637,7 @@ export const FloatingButton = () => {
             <div style={S.section}>
               <div style={S.bold}>{text.custom}</div>
               {controls.entries.length === 0 && <div style={S.small}>{text.none}</div>}
-              <div style={S.list(180)}>
+              <div style={S.list(130)}>
                 {controls.entries.map((entry) => (
                   <div key={entry.id} style={S.item}>
                     <div style={S.itemLabel}>{entry.label}</div>
@@ -612,6 +652,7 @@ export const FloatingButton = () => {
 
             <div style={S.link} title={text.hideHint} onClick={() => { setMenuOpen(false); trigger(group, "hideButton"); }}>
               {text.hide}
+            </div>
             </div>
           </div>
         )}
