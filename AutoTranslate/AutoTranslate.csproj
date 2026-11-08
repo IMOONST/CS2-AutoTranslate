@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Configurations>Debug;Release</Configurations>
+		<!--Mod information used when publishing on Paradox Mods-->
+		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
+		<RootNamespace>AutoTranslate</RootNamespace>
+		<AssemblyName>AutoTranslate</AssemblyName>
+		<LangVersion>9</LangVersion>
+	</PropertyGroup>
+	<!--Imports must be after PropertyGroup block-->
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
+	<ItemGroup>
+		<Reference Include="Game"><Private>false</Private></Reference>
+		<Reference Include="Colossal.Core"><Private>false</Private></Reference>
+		<Reference Include="Colossal.Logging"><Private>false</Private></Reference>
+		<Reference Include="Colossal.IO.AssetDatabase"><Private>false</Private></Reference>
+		<Reference Include="Colossal.Localization"><Private>false</Private></Reference>
+		<Reference Include="Colossal.UI"><Private>false</Private></Reference>
+		<Reference Include="Colossal.UI.Binding"><Private>false</Private></Reference>
+		<Reference Include="Colossal.PSI.Common"><Private>false</Private></Reference>
+		<Reference Include="UnityEngine.CoreModule"><Private>false</Private></Reference>
+		<Reference Include="Unity.Entities"><Private>false</Private></Reference>
+		<Reference Include="Unity.Collections"><Private>false</Private></Reference>
+		<Reference Include="Unity.Mathematics"><Private>false</Private></Reference>
+		<Reference Include="Unity.Burst"><Private>false</Private></Reference>
+		<Reference Include="Newtonsoft.Json"><Private>false</Private></Reference>
+		<Reference Include="cohtml.Net"><Private>false</Private></Reference>
+		<Reference Include="Cohtml.Runtime"><Private>false</Private></Reference>
+		<Reference Include="System.Net.Http"><Private>false</Private></Reference>
+	</ItemGroup>
+	<!--The assembly version (shown on the Options page) is the ModVersion in PublishConfiguration.xml-->
+	<Target Name="VersionFromPublishConfiguration" BeforeTargets="GetAssemblyVersion">
+		<XmlPeek XmlInputPath="$(PublishConfigurationPath)" Query="/Publish/ModVersion/@Value">
+			<Output TaskParameter="Result" PropertyName="Version" />
+		</XmlPeek>
+	</Target>
+	<!--Ship community override dictionaries next to the dll-->
+	<Target Name="DeployResources" AfterTargets="DeployWIP" Condition="'$(NeedBuild)'">
+		<ItemGroup>
+			<ResourceFilesToDeploy Include="Resources\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(ResourceFilesToDeploy)" DestinationFiles="@(ResourceFilesToDeploy->'$(DeployDir)\Resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+	</Target>
+	<!--The UI module (React) builds straight into the deploy folder, which DeployWIP wipes first-->
+	<Target Name="BuildUI" AfterTargets="DeployResources" Condition="'$(NeedBuild)' And Exists('UI/package.json')">
+		<Exec Command="npm install --no-audit --no-fund" WorkingDirectory="UI" Condition="!Exists('UI/node_modules')" />
+		<Exec Command="npm run build" WorkingDirectory="UI" />
+	</Target>
+	<ItemGroup>
+		<Compile Remove="UI\**" />
+		<None Remove="UI\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Update="System"><Private>false</Private></Reference>
+		<Reference Update="System.Core"><Private>false</Private></Reference>
+		<Reference Update="System.Data"><Private>false</Private></Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
+		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
+	</ItemGroup>
+</Project>

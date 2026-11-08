@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Publish>
+	<!--No ModId: Paradox Mods assigns it on the first publish (PublishNewMod) and the toolchain writes it here.-->
+	<DisplayName Value="Auto Translate: Any Mod" />
+	<ShortDescription Value="Translates your mods, and any untranslated text on screen, into your language automatically. 44 languages, permanent offline memory, per-mod control." />
+	<LongDescription>
+# Auto Translate: Any Mod
+
+**Many mods only speak English, or only their author's language. Auto Translate shows them in yours, automatically.**
+
+Install it, start the game, and the mods you use appear in your language. Not only mods: any English text on screen that has no translation is translated too. The game's own translated texts are never touched.
+
+## Features
+- **Translates other mods**: the localization of every installed mod that has no translation for your language, and the text mod panels and windows draw directly.
+- **Any untranslated text on screen**: text the game or a mod builds while you play, with no translation of its own.
+- **Never changes the game's own translations.**
+- **Picks the language by itself**: the game's language, otherwise your Windows language, or choose from **44 languages**, including languages the game does not offer (Arabic, Hindi, Indonesian, Vietnamese, Ukrainian and more).
+- **Translation engines**: Free automatic (default: two free Google endpoints, switching when one refuses), Google, DeepL (your key), LibreTranslate (your own or a public server), Microsoft Translator (your key).
+- **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Known texts appear instantly, even offline, and no text is ever sent for translation twice.
+- **Floating button while you play**: drag it anywhere on the screen. Click it to:
+  - turn translation on or off;
+  - see how many texts are translated and how many are waiting;
+  - start the **click mode**: click any mod window and its translation stops at once; click it again and it comes back. Your choices are saved, and everything you switched off is listed in the button's menu with a button to bring it back.
+- **Exclusions**:
+  - Words and names that are never translated (for example a place name stays as written, even inside a translated sentence).
+  - Whole mods left exactly as they are.
+  - Editable on the Options page, in the click mode, or in ModsData/AutoTranslate/exclusions.json.
+- **Override files**: your own or community translations (JSON files in ModsData/AutoTranslate/Overrides/language-code/) always win over machine translation.
+- **Export untranslated texts** to JSON for community translators.
+- **Status panel**: engine, text counts, memory size and errors.
+- Placeholders such as {0} and {NAME}, numbers and tags are kept intact.
+- Light: idle cost is a few comparisons per frame; translation, saving and loading run in the background.
+
+## How to use
+1. Subscribe and start the game. Translation starts by itself in your game language (or your Windows language when the game is in English).
+2. In a city, use the floating button (top right by default) to switch translation off or on, or to choose which mod windows are translated.
+3. Options → Auto Translate: master switch, language, engine, floating button, exclusions, status and maintenance (clear memory, open the overrides folder, export untranslated texts, retranslate).
+
+## Privacy
+With an online engine, **only the texts to be translated** are sent to the service you chose: never your city, saves or personal data. Each text is sent once, thanks to the memory. Override files and the memory never leave your computer. The free engines use unofficial endpoints that may limit or stop requests at any time. API keys are stored in plain text in the game's settings file.
+
+## Good to know
+- Machine translation is not perfect; override files let you fix any text.
+- Excluded by default: Sign Builder: Saudi Edition and Arabic Street Names (they bring their own Arabic), and Auto Translate itself.
+- Safe to remove at any time: nothing is saved into your city.
+
+---
+
+# مترجم المودات التلقائي
+
+**كثير من المودات بالإنجليزية فقط، أو بلغة صاحبها. هذا المود يعرضها بلغتك تلقائياً.**
+
+ثبّته وشغّل اللعبة، وتظهر المودات بلغتك. ومو بس المودات: أي نص إنجليزي على الشاشة ما له ترجمة يُترجم بعد. نصوص اللعبة المترجمة أصلاً ما يلمسها أبداً.
+
+## الميزات
+- **يترجم المودات الأخرى**: نصوص الترجمة لكل مود ما فيه لغتك، والنصوص اللي تعرضها لوحات ونوافذ المودات مباشرة.
+- **أي نص غير مترجم على الشاشة**: النصوص اللي تبنيها اللعبة أو المودات وقت اللعب وما لها ترجمة.
+- **ما يغيّر ترجمات اللعبة نفسها.**
+- **يختار اللغة بنفسه**: لغة اللعبة، وإلا لغة ويندوز، أو تختار من **44 لغة** منها لغات ما توفرها اللعبة مثل العربية.
+- **محركات الترجمة**: مجاني تلقائي (الافتراضي: خدمتان مجانيتان من Google يتنقّل بينهما)، Google، DeepL (بمفتاحك)، LibreTranslate، Microsoft Translator (بمفتاحك).
+- **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النصوص المعروفة تظهر فوراً حتى بدون إنترنت، وما يُرسل أي نص للترجمة مرتين.
+- **أيقونة عائمة أثناء اللعب**: تسحبها لأي مكان، وتضغط عليها عشان:
+  - تشغّل الترجمة أو توقفها؛
+  - تشوف كم نص تترجم وكم ينتظر؛
+  - تشغّل **وضع التحكم بالضغط**: تضغط على نافذة أي مود فتتوقف ترجمته فوراً، وتضغط مرة ثانية فترجع. اختياراتك تنحفظ، وكل ما أوقفته يظهر في قائمة الأيقونة مع زر لإرجاعه.
+- **الاستثناءات**:
+  - كلمات وأسماء ما تُترجم أبداً (مثل اسم مكان يبقى كما هو حتى داخل جملة مترجمة).
+  - مودات كاملة تبقى زي ما هي.
+  - تعدّلها من صفحة الإعدادات، أو بوضع التحكم بالضغط، أو من الملف ModsData/AutoTranslate/exclusions.json.
+- **ملفات الترجمة اليدوية**: ترجماتك أو ترجمات المجتمع (ملفات JSON في ModsData/AutoTranslate/Overrides/رمز-اللغة/) تتغلب دائماً على الترجمة الآلية.
+- **تصدير النصوص غير المترجمة** لمساعدة المترجمين.
+- **لوحة حالة**: المحرك، عدد النصوص، حجم الذاكرة، والأخطاء.
+- يحافظ على العناصر مثل {0} و {NAME} والأرقام والوسوم كما هي.
+- خفيف: وقت الفراغ شغله مقارنات بسيطة كل إطار، والترجمة والحفظ والتحميل في الخلفية.
+
+## طريقة الاستخدام
+1. اشترك في المود وشغّل اللعبة. الترجمة تبدأ تلقائياً بلغة اللعبة (أو لغة ويندوز إذا اللعبة بالإنجليزية).
+2. داخل المدينة استخدم الأيقونة العائمة (أعلى اليمين افتراضياً) لإيقاف الترجمة أو تشغيلها، أو لاختيار نوافذ المودات اللي تترجم.
+3. الإعدادات ← Auto Translate: التشغيل والإيقاف، اللغة، المحرك، الأيقونة العائمة، الاستثناءات، الحالة، والصيانة.
+
+## الخصوصية
+مع المحركات عبر الإنترنت تُرسل **النصوص المطلوب ترجمتها فقط** للخدمة اللي اخترتها، وليس مدينتك أو ملفات الحفظ أو بياناتك أبداً. كل نص يُرسل مرة وحدة بفضل الذاكرة. الخدمات المجانية واجهات غير رسمية قد تحدّ الطلبات أو تتوقف في أي وقت. مفاتيح API تُحفظ كنص عادي في ملف إعدادات اللعبة.
+
+## معلومات مهمة
+- الترجمة الآلية مو مثالية، وتقدر تصحّح أي نص بملفات الترجمة اليدوية.
+- مستثنى افتراضياً: Sign Builder: Saudi Edition و Arabic Street Names (فيها عربي جاهز)، والمترجم نفسه.
+- تقدر تشيله في أي وقت بأمان: ما يحفظ شي داخل مدينتك.
+	</LongDescription>
+	<Thumbnail Value="Properties/Thumbnail.png" />
+	<!--Screenshots are added by the user from the game (see README-PUBLISH.md at the repository root).-->
+	<Screenshot Value="Properties/Screenshot1.png" />
+	<Screenshot Value="Properties/Screenshot2.png" />
+	<Screenshot Value="Properties/Screenshot3.png" />
+	<Screenshot Value="Properties/Screenshot4.png" />
+	<Tag Value="Code Mod" />
+	<ModVersion Value="1.0.0" />
+	<GameVersion Value="1.6.*" />
+	<ChangeLog>
+1.0.0 - First release / الإصدار الأول
+
+- Automatic translation of other mods and of any untranslated text on screen, into 44 languages, with five engine choices.
+- Permanent offline translation memory, master on/off switch, word and whole-mod exclusions.
+- Floating button with a click mode to switch translation off or on per mod window.
+- Override files, export of untranslated texts, and a status panel.
+
+- ترجمة تلقائية للمودات الأخرى ولأي نص غير مترجم على الشاشة إلى 44 لغة، بخمسة خيارات للمحرك.
+- ذاكرة ترجمة دائمة تعمل دون إنترنت، زر تشغيل/إيقاف، استثناء كلمات ومودات كاملة.
+- أيقونة عائمة مع وضع التحكم بالضغط لإيقاف الترجمة أو تشغيلها لكل نافذة مود.
+- ملفات ترجمة يدوية، تصدير النصوص غير المترجمة، ولوحة حالة.
+	</ChangeLog>
+	<AccessLevel Value="Public" />
+</Publish>
