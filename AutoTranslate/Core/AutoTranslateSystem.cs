@@ -121,6 +121,10 @@ namespace AutoTranslate.Core
         private readonly Dictionary<string, List<string>> m_KeysByText = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         private readonly Dictionary<string, string> m_Written = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly HashSet<string> m_DirtyKeys = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>Keys of mods shown in another language, waiting for a translation: English text (trimmed) to keys.</summary>
+        private readonly Dictionary<string, List<string>> m_LangKeysByText = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        /// <summary>Texts to queue per other language: language to (English-sourced, auto-detected).</summary>
+        private readonly Dictionary<string, (List<string> english, List<string> auto)> m_LangRequests = new Dictionary<string, (List<string>, List<string>)>(StringComparer.OrdinalIgnoreCase);
         private TranslatedSource m_Source;
         private string m_SourceLocale;
         private string m_InjectedTarget = "";
@@ -580,6 +584,29 @@ namespace AutoTranslate.Core
                     any = true;
                 }
             }
+            // Mods shown in another language.
+            for (int i = 0; i < texts.Count && m_LangKeysByText.Count > 0; i++)
+            {
+                if (!m_LangKeysByText.TryGetValue(texts[i], out var keys)) continue;
+                for (int k = keys.Count - 1; k >= 0; k--)
+                {
+                    var key = keys[k];
+                    if (!m_Keys.TryGetValue(key, out var info) || info.Mod?.Language == null)
+                    {
+                        keys.RemoveAt(k);
+                        continue;
+                    }
+                    // The text may have been translated into another language than this key's: it keeps waiting then.
+                    if (!m_Service.TryGet(info.English, TextOrigin.Localization, info.Mod.Language, out var translated)) continue;
+                    keys.RemoveAt(k);
+                    m_Desired[key] = translated;
+                    m_Service.AddForeignText(translated);
+                    m_DirtyKeys.Add(key);
+                    s_TranslatedCount++;
+                    any = true;
+                }
+                if (keys.Count == 0) m_LangKeysByText.Remove(texts[i]);
+            }
             if (!any) return;
             s_StatusVersion++;
             ScheduleRefresh(UnityEngine.Time.realtimeSinceStartup);
@@ -700,6 +727,11 @@ namespace AutoTranslate.Core
             {
                 if (requestEnglish.Count > 0) m_Service.Request(requestEnglish, TextOrigin.Localization, "en");
                 if (requestAuto.Count > 0) m_Service.Request(requestAuto, TextOrigin.Localization, "auto");
+                foreach (var pair in m_LangRequests)
+                {
+                    if (pair.Value.english.Count > 0) m_Service.Request(pair.Value.english, TextOrigin.Localization, "en", pair.Key);
+                    if (pair.Value.auto.Count > 0) m_Service.Request(pair.Value.auto, TextOrigin.Localization, "auto", pair.Key);
+                }
             }
 
             m_FullVerify = true;
@@ -789,10 +821,15 @@ namespace AutoTranslate.Core
                 }
             }
             foreach (var mod in catalog.Used)
+            {
                 mod.Excluded = exclusions.IsExcludedMod(mod.AssemblyName, mod.DisplayName, mod.Title);
+                var language = mod.Excluded ? null : exclusions.LanguageForMod(mod.AssemblyName, mod.DisplayName, mod.Title);
+                mod.Language = string.IsNullOrEmpty(language) || TextRules.SameLanguage(language, target) ? null : language;
+            }
 
             // 3. The keys. Values of excluded mods are collected for the interface hook (see IsExcludedInterfaceText).
             var excludedValues = new HashSet<string>(StringComparer.Ordinal);
+            var languageValues = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var (localeId, sourceRead) in order)
             {
                 var entries = sourceRead.Entries;
@@ -820,6 +857,8 @@ namespace AutoTranslate.Core
                         info = new KeyInfo();
                         m_Keys[pair.Key] = info;
                     }
+                    if (mod.Language != null && pair.Value.Length > 0 && !forTarget)
+                        languageValues[TextRules.HasOuterWhitespace(pair.Value) ? pair.Value.Trim() : pair.Value] = mod.Language;
                     if (mod.Excluded)
                     {
                         info.Excluded = true;
@@ -863,6 +902,7 @@ namespace AutoTranslate.Core
             s_ModsWithTexts = list.Count;
             s_ExcludedMods = excludedMods;
             m_Service.SetExcludedModTexts(excludedValues);
+            m_Service.SetModLanguageTexts(languageValues);
         }
 
         /// <summary>Decides each key's text in the target language (or queues it), into <see cref="m_Desired"/>.</summary>
@@ -872,7 +912,10 @@ namespace AutoTranslate.Core
             requestAuto = new List<string>();
             m_Desired.Clear();
             m_KeysByText.Clear();
+            m_LangKeysByText.Clear();
+            m_LangRequests.Clear();
             m_DirtyKeys.Clear();
+            var foreign = new HashSet<string>(StringComparer.Ordinal);
             var overrides = m_Service.CurrentOverrides;
             var exclusions = m_Service.CurrentExclusions;
             int found = 0, translated = 0;
@@ -886,6 +929,38 @@ namespace AutoTranslate.Core
                 if (info.Excluded) continue;
                 bool counts = !string.IsNullOrWhiteSpace(info.English) && TextRules.HasLetters(info.English);
                 if (counts) found++;
+
+                // A mod the player set to another language: its English texts are translated into that language (the
+                // main target's overrides and the mod's own main-language texts do not apply).
+                var language = info.Mod?.Language;
+                if (language != null)
+                {
+                    if (!counts || info.EnglishRank == 4 || exclusions.IsExcludedText(info.English)) continue;
+                    var source = info.English;
+                    if (TextRules.IsInTargetScript(source, language)) continue;
+                    if (m_Service.TryGet(source, TextOrigin.Localization, language, out var inLanguage))
+                    {
+                        m_Desired[key] = inLanguage;
+                        foreign.Add(inLanguage.Trim());
+                        translated++;
+                        continue;
+                    }
+                    if (source.Length > TranslationService.MaxTextLength) continue;
+                    var sourceCore = source.Trim();
+                    if (!m_LangKeysByText.TryGetValue(sourceCore, out var langKeys))
+                    {
+                        langKeys = new List<string>(1);
+                        m_LangKeysByText[sourceCore] = langKeys;
+                    }
+                    langKeys.Add(key);
+                    if (!m_LangRequests.TryGetValue(language, out var lists))
+                    {
+                        lists = (new List<string>(), new List<string>());
+                        m_LangRequests[language] = lists;
+                    }
+                    (info.EnglishRank <= 2 ? lists.english : lists.auto).Add(sourceCore);
+                    continue;
+                }
 
                 // An override by key is the player's explicit choice for this key: it wins over everything below.
                 if (overrides.TryGetKey(key, out var byKey))
@@ -933,6 +1008,7 @@ namespace AutoTranslate.Core
                 m_Desired[pair.Key] = pair.Value;
             }
 
+            m_Service.SetForeignTexts(foreign);
             s_FoundCount = found;
             s_TranslatedCount = translated;
             s_StatusVersion++;

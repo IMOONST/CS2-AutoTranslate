@@ -30,6 +30,9 @@ namespace AutoTranslate.Core
 
         /// <summary>In the exclusion list at the last scan.</summary>
         public bool Excluded;
+
+        /// <summary>The language the player chose for this mod (floating button), or null for the main target.</summary>
+        public string Language;
     }
 
     /// <summary>

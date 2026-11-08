@@ -10,7 +10,7 @@ A Cities: Skylines II code mod that translates your mods, and any untranslated t
 - Target language: the game's, otherwise Windows', or one of 44 chosen manually.
 - Engines: Free automatic (two free Google endpoints with failover and back-off), Google, DeepL, LibreTranslate, Microsoft Translator.
 - Permanent translation memory (`ModsData/AutoTranslate/cache/<language>.json`): loaded at startup, saved within about 2 seconds, never translates a text twice.
-- Floating button: drag anywhere; on/off; click mode to switch translation off or on for one mod window.
+- Floating button: drag anywhere; on/off; target language; click mode to show one mod translated, original, or in another language.
 - Exclusions: protected words, whole texts, whole mods (`ModsData/AutoTranslate/exclusions.json`, the options page, or the click mode).
 - Override files for hand-made or community translations; export of untranslated texts.
 
@@ -55,7 +55,7 @@ MIT, see [LICENSE](LICENSE).
 - اللغة: لغة اللعبة، وإلا لغة ويندوز، أو تختار من 44 لغة.
 - محركات: مجاني تلقائي، Google، DeepL، LibreTranslate، Microsoft.
 - ذاكرة ترجمة دائمة: تتحمّل عند التشغيل، وتنحفظ خلال ثانيتين تقريباً، وما يترجم نص مرتين.
-- أيقونة عائمة: تسحبها لأي مكان، تشغيل وإيقاف، ووضع التحكم بالضغط لكل نافذة مود.
+- أيقونة عائمة: تسحبها لأي مكان، تشغيل وإيقاف، اختيار اللغة، ووضع التحكم بالضغط لعرض كل مود مترجم أو بالأصل أو بلغة ثانية.
 - استثناءات: كلمات محمية، نصوص كاملة، مودات كاملة.
 - ملفات ترجمة يدوية، وتصدير النصوص غير المترجمة.
 

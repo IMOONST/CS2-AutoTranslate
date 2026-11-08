@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AutoTranslate.Core;
+using AutoTranslate.Providers;
 using Colossal.UI.Binding;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -8,23 +9,25 @@ using Newtonsoft.Json.Linq;
 namespace AutoTranslate.Interface
 {
     /// <summary>
-    /// The floating button (UI/src/floating.tsx): its state, and the click mode that switches the translation of one
-    /// mod window off or on.
+    /// The floating button (UI/src/floating.tsx): its state, the target language, and the click mode that sets how one
+    /// mod window is shown: with the main translation, in its original text, or translated into another language.
     /// <list type="bullet">
-    /// <item>value <c>controls</c>: JSON <c>{ arabic, show, x, y, enabled, interfaces, target, translated, waiting,
-    /// entries: [{ id, label, kind }] }</c>. Entries are everything switched off: panels and mods switched off with a
-    /// click, and the mods of exclusions.json and of the options field.</item>
-    /// <item>trigger <c>toggleEnabled</c>: the master switch of the options page.</item>
-    /// <item>trigger <c>pick</c>(string): JSON <c>{ texts: [...], label }</c>, the texts (originals) of the window that was
-    /// clicked. Answered in <c>pickResult</c>.</item>
-    /// <item>trigger <c>restore</c>(string): an entry id; its translation comes back.</item>
-    /// <item>trigger <c>moveButton</c>(string): JSON <c>{ x, y }</c>, where the button was dropped.</item>
-    /// <item>trigger <c>hideButton</c>: hides the button (the options page shows it again).</item>
-    /// <item>value <c>pickResult</c>: JSON <c>{ nonce, action: "off" | "on" | "none" | "error", label }</c>.</item>
+    /// <item>value <c>controls</c>: JSON <c>{ arabic, show, x, y, enabled, interfaces, mode, manual, target, targetName,
+    /// translated, waiting, entries: [{ id, label, kind, language, languageName }] }</c>. Entries are every mod or window
+    /// with its own setting, and the mods excluded in exclusions.json or the options field.</item>
+    /// <item>value <c>languages</c>: JSON <c>[{ code, name }]</c>, every language that can be chosen (fixed).</item>
+    /// <item>trigger <c>toggleEnabled</c>; <c>setTargetMode</c>(string: Auto, GameLanguage, SystemLanguage, Manual);
+    /// <c>setManualLanguage</c>(string code); <c>moveButton</c>(string JSON { x, y }); <c>hideButton</c>.</item>
+    /// <item>trigger <c>pick</c>(string JSON { texts, label }): the texts (originals) of the window clicked in click mode.
+    /// Answered in <c>pickResult</c> with <c>{ nonce, action: "choose", token, label, kind, current }</c> (current:
+    /// "default", "original" or a language code), or <c>action: "none"</c> for a game window.</item>
+    /// <item>trigger <c>applyPick</c>(string JSON { token, choice }): choice "default", "original" or a language code.
+    /// Answered with <c>{ action: "applied", label, choice }</c> or <c>{ action: "error" }</c>.</item>
+    /// <item>trigger <c>restore</c>(string id): back to the main translation.</item>
     /// </list>
-    /// A click decides, in this order: a window switched off before (same texts) is switched on again; a window of a
-    /// recognised mod switches that mod off — or on again when it is excluded; a window of no known mod switches its
-    /// own texts off. Everything is saved in exclusions.json ("panels", "mods"), so it lasts across games.
+    /// A window is matched to its mod by its texts (<see cref="AutoTranslateSystem.FindOwners"/>): a recognised mod is
+    /// set as a whole (its localization and its windows); a window of no known mod is set by its own texts. Saved in
+    /// exclusions.json ("panels"; "language" "" means original), so it lasts across games.
     /// </summary>
     public partial class InterfaceTextSystem
     {
@@ -35,16 +38,39 @@ namespace AutoTranslate.Interface
         private ValueBinding<string> m_PickResult;
         private DateTime m_LastControls = DateTime.MinValue;
         private int m_PickNonce;
+        private PendingPick m_Pending;
+
+        /// <summary>A window clicked in click mode, waiting for the player's choice.</summary>
+        private sealed class PendingPick
+        {
+            public int Token;
+            public string Label = "";
+            public ModEntry Owner;
+            public PanelEntry Panel;
+            public readonly List<string> Texts = new List<string>();
+        }
 
         private void CreateControls()
         {
             AddBinding(m_Controls = new ValueBinding<string>(Group, "controls", "{}"));
             AddBinding(m_PickResult = new ValueBinding<string>(Group, "pickResult", ""));
+            AddBinding(new ValueBinding<string>(Group, "languages", BuildLanguages()));
             AddBinding(new TriggerBinding(Group, "toggleEnabled", OnToggleEnabled));
+            AddBinding(new TriggerBinding<string>(Group, "setTargetMode", OnSetTargetMode));
+            AddBinding(new TriggerBinding<string>(Group, "setManualLanguage", OnSetManualLanguage));
             AddBinding(new TriggerBinding<string>(Group, "pick", OnPick));
+            AddBinding(new TriggerBinding<string>(Group, "applyPick", OnApplyPick));
             AddBinding(new TriggerBinding<string>(Group, "restore", OnRestore));
             AddBinding(new TriggerBinding<string>(Group, "moveButton", OnMoveButton));
             AddBinding(new TriggerBinding(Group, "hideButton", OnHideButton));
+        }
+
+        private static string BuildLanguages()
+        {
+            var list = new JArray();
+            foreach (var code in LanguageCodes.Supported)
+                list.Add(new JObject { ["code"] = code, ["name"] = LanguageCodes.DisplayName(code) });
+            return list.ToString(Formatting.None);
         }
 
         /// <summary>Rebuilds the state a few times per second; the binding only updates when it changed.</summary>
@@ -77,18 +103,20 @@ namespace AutoTranslate.Interface
                     ["id"] = "panel:" + panel.Id,
                     ["label"] = panel.Label,
                     ["kind"] = string.IsNullOrEmpty(panel.Mod) ? "panel" : "mod",
+                    ["language"] = panel.Language ?? "",
+                    ["languageName"] = string.IsNullOrEmpty(panel.Language) ? "" : LanguageCodes.DisplayName(panel.Language),
                 });
                 if (!string.IsNullOrEmpty(panel.Mod)) listed.Add(Exclusions.ModKey(panel.Mod));
             }
             foreach (var mod in exclusions.FileMods)
             {
                 if (!listed.Add(Exclusions.ModKey(mod))) continue;
-                entries.Add(new JObject { ["id"] = "file:" + mod, ["label"] = mod, ["kind"] = "mod" });
+                entries.Add(new JObject { ["id"] = "file:" + mod, ["label"] = mod, ["kind"] = "mod", ["language"] = "", ["languageName"] = "" });
             }
             foreach (var mod in exclusions.FieldMods)
             {
                 if (!listed.Add(Exclusions.ModKey(mod))) continue;
-                entries.Add(new JObject { ["id"] = "field:" + mod, ["label"] = mod, ["kind"] = "mod" });
+                entries.Add(new JObject { ["id"] = "field:" + mod, ["label"] = mod, ["kind"] = "mod", ["language"] = "", ["languageName"] = "" });
             }
 
             var root = new JObject
@@ -99,13 +127,18 @@ namespace AutoTranslate.Interface
                 ["y"] = settings?.ButtonY ?? -1,
                 ["enabled"] = settings != null && settings.Enabled,
                 ["interfaces"] = settings != null && settings.TranslateInterfaces,
+                ["mode"] = settings != null ? settings.TargetMode.ToString() : "Auto",
+                ["manual"] = settings?.ManualLanguage ?? "",
                 ["target"] = m_Target ?? "",
+                ["targetName"] = string.IsNullOrEmpty(m_Target) ? "" : LanguageCodes.DisplayName(m_Target),
                 ["translated"] = AutoTranslateSystem.TranslatedCount,
                 ["waiting"] = AutoTranslateSystem.WaitingCount,
                 ["entries"] = entries,
             };
             return root.ToString(Formatting.None);
         }
+
+        // ------------------------------------------------------------------ settings from the menu
 
         private void OnToggleEnabled()
         {
@@ -114,6 +147,34 @@ namespace AutoTranslate.Interface
             settings.Enabled = !settings.Enabled;
             settings.ApplyAndSave();
             UpdateControls(force: true);
+        }
+
+        private void OnSetTargetMode(string mode)
+        {
+            var settings = Mod.Settings;
+            if (settings == null || string.IsNullOrEmpty(mode)) return;
+            if (!Enum.TryParse(mode, out Setting.TargetLanguageMode value) || !Enum.IsDefined(typeof(Setting.TargetLanguageMode), value)) return;
+            if (settings.TargetMode == value) return;
+            settings.TargetMode = value;
+            settings.ApplyAndSave();
+            UpdateControls(force: true);
+        }
+
+        private void OnSetManualLanguage(string code)
+        {
+            var settings = Mod.Settings;
+            if (settings == null || string.IsNullOrEmpty(code) || !IsKnownLanguage(code)) return;
+            settings.ManualLanguage = code;
+            settings.TargetMode = Setting.TargetLanguageMode.Manual;
+            settings.ApplyAndSave();
+            UpdateControls(force: true);
+        }
+
+        private static bool IsKnownLanguage(string code)
+        {
+            foreach (var supported in LanguageCodes.Supported)
+                if (string.Equals(supported, code, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         private void OnHideButton()
@@ -146,24 +207,17 @@ namespace AutoTranslate.Interface
             }
         }
 
+        // ------------------------------------------------------------------ restoring an entry
+
         private void OnRestore(string id)
         {
             if (string.IsNullOrEmpty(id)) return;
             var ok = true;
-            if (id.StartsWith("panel:", StringComparison.Ordinal))
-            {
-                ok = Exclusions.RemovePanel(id.Substring(6));
-            }
-            else if (id.StartsWith("file:", StringComparison.Ordinal))
-            {
-                ok = Exclusions.RemoveFileMod(id.Substring(5));
-            }
-            else if (id.StartsWith("field:", StringComparison.Ordinal))
-            {
-                RemoveFieldMod(id.Substring(6));
-            }
+            if (id.StartsWith("panel:", StringComparison.Ordinal)) ok = Exclusions.RemovePanel(id.Substring(6));
+            else if (id.StartsWith("file:", StringComparison.Ordinal)) ok = Exclusions.RemoveFileMod(id.Substring(5));
+            else if (id.StartsWith("field:", StringComparison.Ordinal)) RemoveFieldMod(id.Substring(6));
             AutoTranslateSystem.RequestReloadExclusions();
-            if (!ok) SendPickResult("error", "");
+            if (!ok) SendPickResult(new JObject { ["action"] = "error" });
             UpdateControls(force: true);
         }
 
@@ -191,28 +245,30 @@ namespace AutoTranslate.Interface
             return true;
         }
 
-        private void SendPickResult(string action, string label)
+        private void SendPickResult(JObject result)
         {
             m_PickNonce++;
-            var obj = new JObject { ["nonce"] = m_PickNonce, ["action"] = action, ["label"] = label ?? "" };
-            m_PickResult.Update(obj.ToString(Formatting.None));
+            result["nonce"] = m_PickNonce;
+            m_PickResult.Update(result.ToString(Formatting.None));
         }
+
+        // ------------------------------------------------------------------ click mode
 
         private void OnPick(string json)
         {
             try
             {
-                Pick(json);
+                Identify(json);
             }
             catch (Exception e)
             {
                 Mod.Log.Warn(e, "Auto Translate: the click mode failed");
-                SendPickResult("error", "");
+                SendPickResult(new JObject { ["action"] = "error" });
             }
-            UpdateControls(force: true);
         }
 
-        private void Pick(string json)
+        /// <summary>Finds what the clicked window is (a mod, a window set before, or neither) and asks the player.</summary>
+        private void Identify(string json)
         {
             if (string.IsNullOrEmpty(json)) return;
             var obj = JObject.Parse(json);
@@ -227,39 +283,16 @@ namespace AutoTranslate.Interface
                     if (text.Length >= 2 && text.Length <= MaxTextLength) texts.Add(text);
                 }
             }
-            var fallbackLabel = ((string)obj["label"] ?? "").Trim();
+            var fallbackLabel = Shorten(((string)obj["label"] ?? "").Trim());
             if (texts.Count == 0)
             {
-                SendPickResult("none", fallbackLabel);
+                SendPickResult(new JObject { ["action"] = "none", ["label"] = fallbackLabel });
                 return;
             }
 
             var exclusions = m_Service?.CurrentExclusions ?? Exclusions.Empty;
-
-            // 1. A window switched off before: its saved texts overlap what is shown now.
             var english = new Dictionary<string, string>(StringComparer.Ordinal);
             var owners = AutoTranslateSystem.FindOwners(texts, english);
-            var compare = new HashSet<string>(texts, StringComparer.OrdinalIgnoreCase);
-            foreach (var value in english.Values) compare.Add(value);
-
-            PanelEntry bestPanel = null;
-            var bestOverlap = 0;
-            foreach (var panel in exclusions.Panels)
-            {
-                var overlap = 0;
-                foreach (var text in panel.Texts)
-                    if (compare.Contains(text)) overlap++;
-                if (overlap == 0) continue;
-                var smaller = Math.Min(compare.Count, panel.Texts.Count);
-                if (overlap < 5 && overlap * 3 < smaller) continue;
-                if (overlap > bestOverlap)
-                {
-                    bestOverlap = overlap;
-                    bestPanel = panel;
-                }
-            }
-
-            // The mod with the most texts in the window.
             ModEntry owner = null;
             var ownerVotes = 0;
             foreach (var pair in owners)
@@ -270,85 +303,175 @@ namespace AutoTranslate.Interface
                     ownerVotes = pair.Value;
                 }
             }
-            var ownerName = owner == null ? "" : !string.IsNullOrEmpty(owner.Title) ? owner.Title : !string.IsNullOrEmpty(owner.DisplayName) ? owner.DisplayName : owner.AssemblyName;
 
-            if (bestPanel != null)
-            {
-                var ok = Exclusions.RemovePanel(bestPanel.Id);
-                // A mod excluded both by this window and by a list: the click means "translate it again".
-                if (!string.IsNullOrEmpty(bestPanel.Mod))
-                {
-                    Exclusions.RemoveFileMod(bestPanel.Mod);
-                    RemoveFieldMod(bestPanel.Mod);
-                }
-                AutoTranslateSystem.RequestReloadExclusions();
-                SendPickResult(ok ? "on" : "error", bestPanel.Label);
-                return;
-            }
-
-            // 2. A recognised mod: excluded → translate it again; otherwise switch it off.
-            if (owner != null)
-            {
-                if (exclusions.IsExcludedMod(owner.AssemblyName, owner.DisplayName, owner.Title))
-                {
-                    var names = new[] { owner.AssemblyName, owner.DisplayName, owner.Title };
-                    var fileOk = Exclusions.RemoveFileMod(names);
-                    RemoveFieldMod(names);
-                    // Panels of this mod switched off earlier (with other texts) go too.
-                    foreach (var panel in exclusions.Panels)
-                        if (!string.IsNullOrEmpty(panel.Mod) && Exclusions.ModKey(panel.Mod) == Exclusions.ModKey(owner.AssemblyName))
-                            Exclusions.RemovePanel(panel.Id);
-                    AutoTranslateSystem.RequestReloadExclusions();
-                    SendPickResult(fileOk ? "on" : "error", ownerName);
-                    return;
-                }
-
-                var entry = NewPanel(ownerName, owner.AssemblyName);
-                AddTexts(entry, texts, english, onlyCandidates: false);
-                var added = Exclusions.AddPanel(entry);
-                AutoTranslateSystem.RequestReloadExclusions();
-                SendPickResult(added ? "off" : "error", ownerName);
-                return;
-            }
-
-            // 3. No known mod: the window's own texts (the ones that would be translated).
-            var own = NewPanel(fallbackLabel, "");
-            AddTexts(own, texts, english, onlyCandidates: true);
-            if (own.Texts.Count == 0)
-            {
-                // The game's own window, or nothing translatable in it.
-                SendPickResult("none", fallbackLabel);
-                return;
-            }
-            if (own.Label.Length == 0) own.Label = own.Texts[0];
-            if (own.Label.Length > 40) own.Label = own.Label.Substring(0, 40) + "…";
-            var saved = Exclusions.AddPanel(own);
-            AutoTranslateSystem.RequestReloadExclusions();
-            SendPickResult(saved ? "off" : "error", own.Label);
-        }
-
-        private static PanelEntry NewPanel(string label, string mod)
-        {
-            var label40 = (label ?? "").Trim();
-            if (label40.Length > 40) label40 = label40.Substring(0, 40) + "…";
-            return new PanelEntry
-            {
-                Id = DateTime.UtcNow.Ticks.ToString("x"),
-                Label = label40,
-                Mod = mod ?? "",
-            };
-        }
-
-        private void AddTexts(PanelEntry entry, HashSet<string> texts, Dictionary<string, string> english, bool onlyCandidates)
-        {
+            var pending = new PendingPick { Token = ++m_PickNonce, Owner = owner };
+            // The texts to save: English when the window shows a translation of a localization text.
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var text in texts)
             {
-                // The English text when the window shows our translation of a localization text.
                 var value = english.TryGetValue(text, out var source) && !string.IsNullOrEmpty(source) ? source : text;
-                if (onlyCandidates && (m_Service == null || !IsCandidate(value))) continue;
-                if (seen.Add(value)) entry.Texts.Add(value);
+                // A window of no known mod keeps only the texts that would be translated (not the game's own).
+                if (owner == null && (m_Service == null || !IsCandidateOrSaved(value, exclusions))) continue;
+                if (seen.Add(value)) pending.Texts.Add(value);
             }
+
+            string current = "default";
+            if (owner != null)
+            {
+                var ownerKey = Exclusions.ModKey(owner.AssemblyName);
+                foreach (var panel in exclusions.Panels)
+                {
+                    if (!string.IsNullOrEmpty(panel.Mod) && Exclusions.ModKey(panel.Mod) == ownerKey)
+                    {
+                        pending.Panel = panel;
+                        current = string.IsNullOrEmpty(panel.Language) ? "original" : panel.Language;
+                        break;
+                    }
+                }
+                if (pending.Panel == null && exclusions.IsExcludedMod(owner.AssemblyName, owner.DisplayName, owner.Title)) current = "original";
+                pending.Label = !string.IsNullOrEmpty(owner.Title) ? owner.Title : !string.IsNullOrEmpty(owner.DisplayName) ? owner.DisplayName : owner.AssemblyName;
+            }
+            else
+            {
+                pending.Panel = BestPanel(exclusions, texts, english);
+                if (pending.Panel != null)
+                {
+                    current = string.IsNullOrEmpty(pending.Panel.Language) ? "original" : pending.Panel.Language;
+                    pending.Label = pending.Panel.Label;
+                }
+                else if (pending.Texts.Count == 0)
+                {
+                    // The game's own window, or nothing translatable in it.
+                    SendPickResult(new JObject { ["action"] = "none", ["label"] = fallbackLabel });
+                    return;
+                }
+                else
+                {
+                    pending.Label = fallbackLabel.Length > 0 ? fallbackLabel : Shorten(pending.Texts[0]);
+                }
+            }
+            pending.Label = Shorten(pending.Label);
+
+            m_Pending = pending;
+            m_PickNonce--; // SendPickResult numbers the answer
+            SendPickResult(new JObject
+            {
+                ["action"] = "choose",
+                ["token"] = pending.Token,
+                ["label"] = pending.Label,
+                ["kind"] = owner != null ? "mod" : "panel",
+                ["current"] = current,
+            });
+        }
+
+        /// <summary>A text that would be translated, or one already saved for a window (it is excluded or set then).</summary>
+        private bool IsCandidateOrSaved(string text, Exclusions exclusions)
+        {
+            if (exclusions.LanguageForText(text) != null || exclusions.IsExcludedText(text)) return true;
+            return IsCandidate(text);
+        }
+
+        /// <summary>The saved window (of no known mod) whose texts overlap the clicked ones the most.</summary>
+        private static PanelEntry BestPanel(Exclusions exclusions, HashSet<string> texts, Dictionary<string, string> english)
+        {
+            var compare = new HashSet<string>(texts, StringComparer.OrdinalIgnoreCase);
+            foreach (var value in english.Values) compare.Add(value);
+            PanelEntry best = null;
+            var bestOverlap = 0;
+            foreach (var panel in exclusions.Panels)
+            {
+                if (!string.IsNullOrEmpty(panel.Mod)) continue;
+                var overlap = 0;
+                foreach (var text in panel.Texts)
+                    if (compare.Contains(text)) overlap++;
+                if (overlap == 0) continue;
+                var smaller = Math.Min(compare.Count, panel.Texts.Count);
+                if (overlap < 5 && overlap * 3 < smaller) continue;
+                if (overlap > bestOverlap)
+                {
+                    bestOverlap = overlap;
+                    best = panel;
+                }
+            }
+            return best;
+        }
+
+        private void OnApplyPick(string json)
+        {
+            try
+            {
+                var obj = JObject.Parse(json ?? "{}");
+                var token = (int?)obj["token"] ?? -1;
+                var choice = ((string)obj["choice"] ?? "").Trim();
+                var pending = m_Pending;
+                if (pending == null || pending.Token != token || choice.Length == 0) return;
+                m_Pending = null;
+                var ok = Apply(pending, choice);
+                AutoTranslateSystem.RequestReloadExclusions();
+                SendPickResult(ok
+                    ? new JObject { ["action"] = "applied", ["label"] = pending.Label, ["choice"] = choice, ["languageName"] = ChoiceName(choice) }
+                    : new JObject { ["action"] = "error" });
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Warn(e, "Auto Translate: applying the click mode choice failed");
+                SendPickResult(new JObject { ["action"] = "error" });
+            }
+            UpdateControls(force: true);
+        }
+
+        private static string ChoiceName(string choice) =>
+            choice == "default" || choice == "original" ? "" : LanguageCodes.DisplayName(choice);
+
+        /// <summary>Clears what was set for the window or its mod, then saves the new choice. False when the file could not be written.</summary>
+        private bool Apply(PendingPick pending, string choice)
+        {
+            // The main target chosen as "another language" is the default.
+            if (choice != "default" && choice != "original")
+            {
+                if (!IsKnownLanguage(choice)) return false;
+                if (!string.IsNullOrEmpty(m_Target) && string.Equals(choice, m_Target, StringComparison.OrdinalIgnoreCase)) choice = "default";
+            }
+
+            var ok = true;
+            var exclusions = m_Service?.CurrentExclusions ?? Exclusions.Empty;
+            if (pending.Owner != null)
+            {
+                var owner = pending.Owner;
+                var ownerKey = Exclusions.ModKey(owner.AssemblyName);
+                foreach (var panel in exclusions.Panels)
+                    if (!string.IsNullOrEmpty(panel.Mod) && Exclusions.ModKey(panel.Mod) == ownerKey)
+                        ok &= Exclusions.RemovePanel(panel.Id);
+                var names = new[] { owner.AssemblyName, owner.DisplayName, owner.Title };
+                if (exclusions.IsExcludedMod(owner.AssemblyName, owner.DisplayName, owner.Title))
+                {
+                    Exclusions.RemoveFileMod(names);
+                    RemoveFieldMod(names);
+                }
+            }
+            else if (pending.Panel != null)
+            {
+                ok &= Exclusions.RemovePanel(pending.Panel.Id);
+            }
+
+            if (choice == "default") return ok;
+
+            var entry = new PanelEntry
+            {
+                Id = DateTime.UtcNow.Ticks.ToString("x"),
+                Label = pending.Label,
+                Mod = pending.Owner?.AssemblyName ?? "",
+                Language = choice == "original" ? "" : choice,
+            };
+            entry.Texts.AddRange(pending.Texts);
+            if (entry.Texts.Count == 0 && entry.Mod.Length == 0) return ok;
+            return Exclusions.AddPanel(entry) && ok;
+        }
+
+        private static string Shorten(string label)
+        {
+            label = (label ?? "").Trim();
+            return label.Length > 40 ? label.Substring(0, 40) + "…" : label;
         }
     }
 }

@@ -7,11 +7,11 @@ import { collectTexts } from "hook";
  * The floating Auto Translate button (C#: Interface/FloatingControls.cs).
  *
  * - Drag it anywhere (its place is saved in the settings); a click opens its menu.
- * - Menu: translation on / off (the options page's master switch), the click mode, the windows and mods switched off
- *   (each can be brought back), hide the button.
- * - Click mode: hovering a window outlines it; clicking it sends its texts to C#, which switches that mod's (or that
- *   window's) translation off, or on again when it was off. Clicks in this mode never reach the window. Esc, a right
- *   click or the banner's button leave the mode.
+ * - Menu: translation on / off, the target language (automatic, game, Windows, or a chosen one), the click mode, every
+ *   mod or window with its own setting (each can go back to the main translation), hide the button.
+ * - Click mode: hovering a window outlines it; clicking it asks how to show that mod (or window): with the main
+ *   translation, in its original text, or translated into another language. Clicks in this mode never reach the
+ *   window. Esc, a right click or the banner's button leave the mode.
  *
  * Everything here carries data-at-skip so the interface hook never translates it, and data-at-ui so the click mode
  * ignores it. Written for Coherent Gameface: no closest(), no pointer events, layout reads only on user input.
@@ -23,6 +23,8 @@ interface Entry {
   id: string;
   label: string;
   kind: "mod" | "panel";
+  language: string;
+  languageName: string;
 }
 
 interface Controls {
@@ -32,20 +34,34 @@ interface Controls {
   y: number;
   enabled: boolean;
   interfaces: boolean;
+  mode: "Auto" | "GameLanguage" | "SystemLanguage" | "Manual";
+  manual: string;
   target: string;
+  targetName: string;
   translated: number;
   waiting: number;
   entries: Entry[];
 }
 
+interface Language {
+  code: string;
+  name: string;
+}
+
 interface PickResult {
   nonce: number;
-  action: "off" | "on" | "none" | "error";
-  label: string;
+  action: "choose" | "applied" | "none" | "error";
+  token?: number;
+  label?: string;
+  kind?: "mod" | "panel";
+  current?: string;
+  choice?: string;
+  languageName?: string;
 }
 
 const controls$ = bindValue<string>(group, "controls", "{}");
 const pickResult$ = bindValue<string>(group, "pickResult", "");
+const languages$ = bindValue<string>(group, "languages", "[]");
 
 const parse = <T,>(json: string, fallback: T): T => {
   if (!json) return fallback;
@@ -58,7 +74,8 @@ const parse = <T,>(json: string, fallback: T): T => {
 };
 
 const DEFAULT_CONTROLS: Controls = {
-  arabic: false, show: false, x: -1, y: -1, enabled: false, interfaces: false, target: "", translated: 0, waiting: 0, entries: [],
+  arabic: false, show: false, x: -1, y: -1, enabled: false, interfaces: false, mode: "Auto", manual: "", target: "",
+  targetName: "", translated: 0, waiting: 0, entries: [],
 };
 
 const TEXT = {
@@ -68,25 +85,33 @@ const TEXT = {
     off: "Translation is off",
     turnOff: "Turn off",
     turnOn: "Turn on",
+    language: "Translate into",
+    modes: { Auto: "Automatic", GameLanguage: "Game language", SystemLanguage: "Windows language", Manual: "Choose" },
+    current: (name: string) => (name ? `Now: ${name}` : "No target language (the game and Windows are in English)."),
     pick: "Click mode",
-    pickHint: "Click a mod window to switch its translation off, or on again",
+    pickHint: "Click a mod window to choose its language: translated, original, or another language",
     pickOn: "Click mode is on",
     leave: "Leave",
     status: (t: number, w: number) => `Translated ${t} · waiting ${w}`,
-    excluded: "Not translated",
-    none: "Nothing switched off yet.",
-    restore: "Translate",
+    custom: "Mods and windows with their own setting",
+    none: "None yet: every mod uses the main translation.",
+    restore: "Reset",
     kindMod: "mod",
     kindPanel: "window",
+    originalTag: "original",
     hide: "Hide button",
     hideHint: "The options page shows it again (Floating button).",
     close: "Close",
-    resOff: (l: string) => `Translation off: ${l}`,
-    resOn: (l: string) => `Translation back: ${l}`,
+    chooseTitle: (kind: string) => (kind === "mod" ? "Show this mod:" : "Show this window:"),
+    optDefault: (name: string) => (name ? `Main translation (${name})` : "Main translation"),
+    optOriginal: "Original (not translated)",
+    optOther: "Another language:",
+    resDefault: (l: string) => `Back to the main translation: ${l}`,
+    resOriginal: (l: string) => `Original text: ${l}`,
+    resLanguage: (l: string, n: string) => `${l} → ${n}`,
     resNone: "This is a game window, or it has nothing to translate.",
     resError: "Could not save exclusions.json (see the log).",
-    banner: "Click a mod window: its translation turns off, click again to bring it back. Esc or right click to leave.",
-    noTarget: "No target language (the game and Windows are in English).",
+    banner: "Click a mod window to choose how it is shown. Esc or right click to leave.",
   },
   ar: {
     title: "المترجم التلقائي",
@@ -94,31 +119,40 @@ const TEXT = {
     off: "الترجمة متوقفة",
     turnOff: "إيقاف",
     turnOn: "تشغيل",
+    language: "الترجمة إلى",
+    modes: { Auto: "تلقائي", GameLanguage: "لغة اللعبة", SystemLanguage: "لغة ويندوز", Manual: "اختيار" },
+    current: (name: string) => (name ? `الحالية: ${name}` : "لا توجد لغة هدف (اللعبة وويندوز بالإنجليزية)."),
     pick: "وضع التحكم بالضغط",
-    pickHint: "اضغط على نافذة أي مود لإيقاف ترجمتها أو إرجاعها",
+    pickHint: "اضغط على نافذة أي مود واختر لغتها: مترجمة، أو الأصل، أو لغة ثانية",
     pickOn: "وضع التحكم بالضغط شغّال",
     leave: "خروج",
     status: (t: number, w: number) => `مترجم ${t} · ينتظر ${w}`,
-    excluded: "بدون ترجمة",
-    none: "ما أوقفت ترجمة أي شيء بعد.",
-    restore: "ترجمة",
+    custom: "مودات ونوافذ لها إعداد خاص",
+    none: "ما فيه للحين: كل المودات على الترجمة العامة.",
+    restore: "إرجاع",
     kindMod: "مود",
     kindPanel: "نافذة",
+    originalTag: "الأصل",
     hide: "إخفاء الأيقونة",
     hideHint: "ترجعها من صفحة الإعدادات (الأيقونة العائمة).",
     close: "إغلاق",
-    resOff: (l: string) => `أُوقفت ترجمة: ${l}`,
-    resOn: (l: string) => `رجعت ترجمة: ${l}`,
+    chooseTitle: (kind: string) => (kind === "mod" ? "اعرض هذا المود:" : "اعرض هذه النافذة:"),
+    optDefault: (name: string) => (name ? `الترجمة العامة (${name})` : "الترجمة العامة"),
+    optOriginal: "الأصل (بدون ترجمة)",
+    optOther: "لغة ثانية:",
+    resDefault: (l: string) => `رجع للترجمة العامة: ${l}`,
+    resOriginal: (l: string) => `بدون ترجمة: ${l}`,
+    resLanguage: (l: string, n: string) => `${l} ← ${n}`,
     resNone: "هذه نافذة من اللعبة نفسها، أو ما فيها نص يُترجم.",
     resError: "تعذّر حفظ ملف الاستثناءات (راجع السجل).",
-    banner: "اضغط على نافذة مود: تتوقف ترجمتها، واضغط مرة ثانية ترجع. للخروج: Esc أو زر الماوس الأيمن.",
-    noTarget: "لا توجد لغة هدف (اللعبة وويندوز بالإنجليزية).",
+    banner: "اضغط على نافذة أي مود واختر كيف تظهر. للخروج: Esc أو زر الماوس الأيمن.",
   },
 };
 
 const BUTTON_SIZE = 46;
 const DRAG_THRESHOLD = 4;
 const PICK_LIMIT = 400;
+const MODES: Controls["mode"][] = ["Auto", "GameLanguage", "SystemLanguage", "Manual"];
 
 // ---------------------------------------------------------------------------------------------------------------------
 // DOM helpers (Gameface: no closest)
@@ -160,9 +194,7 @@ const findPanel = (start: Element): Element => {
 // Styles (inline: one small component, no stylesheet to load)
 
 const S = {
-  layer: {
-    position: "absolute", left: "0px", top: "0px", width: "100vw", height: "100vh", pointerEvents: "none",
-  } as any,
+  layer: { position: "absolute", left: "0px", top: "0px", width: "100vw", height: "100vh", pointerEvents: "none" } as any,
   anchor: { position: "absolute", width: BUTTON_SIZE + "rem", height: BUTTON_SIZE + "rem", pointerEvents: "auto" } as any,
   button: (on: boolean, picking: boolean) => ({
     width: BUTTON_SIZE + "rem", height: BUTTON_SIZE + "rem", borderRadius: "50%",
@@ -178,7 +210,7 @@ const S = {
     backgroundColor: color, border: "2rem solid rgba(24,33,48,1)",
   }) as any,
   menu: {
-    position: "absolute", width: "300rem", padding: "10rem 12rem 12rem 12rem", borderRadius: "8rem",
+    position: "absolute", width: "320rem", padding: "10rem 12rem 12rem 12rem", borderRadius: "8rem",
     backgroundColor: "rgba(24, 33, 48, 0.97)", color: "#ffffff", boxShadow: "0 4rem 16rem rgba(0,0,0,0.5)",
     pointerEvents: "auto",
   } as any,
@@ -186,19 +218,29 @@ const S = {
   title: { flex: 1, fontSize: "15rem", fontWeight: "bold", color: "#a6dcff" } as any,
   close: { width: "22rem", height: "22rem", fontSize: "16rem", textAlign: "center", color: "rgba(255,255,255,0.8)", cursor: "pointer" } as any,
   row: { display: "flex", flexDirection: "row", alignItems: "center", marginTop: "6rem" } as any,
+  wrapRow: { display: "flex", flexDirection: "row", flexWrap: "wrap", marginTop: "4rem" } as any,
   label: { flex: 1, fontSize: "13rem" } as any,
+  bold: { fontSize: "13rem", fontWeight: "bold" } as any,
   small: { fontSize: "11.5rem", color: "rgba(255,255,255,0.65)", marginTop: "4rem" } as any,
   btn: (primary: boolean, active?: boolean) => ({
     padding: "4rem 10rem", borderRadius: "4rem", fontSize: "12.5rem", cursor: "pointer",
     backgroundColor: active ? "rgba(255,170,0,0.9)" : primary ? "rgba(79,195,138,0.85)" : "rgba(255,255,255,0.14)",
     color: active ? "#1a1a1a" : "#ffffff",
   }) as any,
+  chip: (active: boolean) => ({
+    padding: "3rem 8rem", margin: "2rem", borderRadius: "4rem", fontSize: "12rem", cursor: "pointer",
+    backgroundColor: active ? "rgba(79,195,138,0.9)" : "rgba(255,255,255,0.12)", color: "#ffffff",
+  }) as any,
   wide: { marginTop: "8rem", padding: "6rem 10rem", borderRadius: "4rem", fontSize: "13rem", textAlign: "center", cursor: "pointer" } as any,
   section: { marginTop: "10rem", paddingTop: "8rem", borderTop: "1rem solid rgba(255,255,255,0.12)" } as any,
-  list: { maxHeight: "220rem", overflowY: "scroll" } as any,
+  list: (height: number) => ({ maxHeight: height + "rem", overflowY: "scroll", marginTop: "4rem" }) as any,
   item: { display: "flex", flexDirection: "row", alignItems: "center", marginTop: "4rem" } as any,
   itemLabel: { flex: 1, fontSize: "12.5rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } as any,
-  kind: { fontSize: "11rem", color: "rgba(255,255,255,0.55)", marginLeft: "6rem", marginRight: "6rem" } as any,
+  kind: { fontSize: "11rem", color: "rgba(255,255,255,0.6)", marginLeft: "6rem", marginRight: "6rem" } as any,
+  option: (active: boolean) => ({
+    padding: "5rem 8rem", marginTop: "3rem", borderRadius: "4rem", fontSize: "12.5rem", cursor: "pointer",
+    backgroundColor: active ? "rgba(79,195,138,0.85)" : "rgba(255,255,255,0.08)", color: "#ffffff",
+  }) as any,
   link: { marginTop: "10rem", fontSize: "12rem", color: "rgba(255,255,255,0.6)", cursor: "pointer" } as any,
   banner: {
     position: "absolute", left: "50%", top: "70rem", transform: "translateX(-50%)", maxWidth: "760rem",
@@ -206,9 +248,11 @@ const S = {
     backgroundColor: "rgba(255, 170, 0, 0.95)", color: "#1a1a1a", fontSize: "13.5rem", pointerEvents: "auto",
   } as any,
   bannerBtn: { marginLeft: "12rem", marginRight: "12rem", padding: "4rem 10rem", borderRadius: "4rem", backgroundColor: "rgba(0,0,0,0.75)", color: "#ffffff", cursor: "pointer" } as any,
-  highlight: {
-    position: "absolute", border: "2rem solid #ffaa00", backgroundColor: "rgba(255,170,0,0.12)", borderRadius: "4rem",
-    pointerEvents: "none",
+  highlight: { position: "absolute", border: "2rem solid #ffaa00", backgroundColor: "rgba(255,170,0,0.12)", borderRadius: "4rem", pointerEvents: "none" } as any,
+  chooser: {
+    position: "absolute", width: "300rem", padding: "10rem 12rem 12rem 12rem", borderRadius: "8rem",
+    backgroundColor: "rgba(24, 33, 48, 0.98)", color: "#ffffff", boxShadow: "0 4rem 18rem rgba(0,0,0,0.6)",
+    border: "2rem solid #ffaa00", pointerEvents: "auto",
   } as any,
   toast: {
     position: "absolute", left: "50%", top: "118rem", transform: "translateX(-50%)", maxWidth: "640rem",
@@ -219,10 +263,20 @@ const S = {
 
 interface Rect { left: number; top: number; width: number; height: number; }
 
+interface Chooser {
+  token: number;
+  label: string;
+  kind: string;
+  current: string;
+  x: number;
+  y: number;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 export const FloatingButton = () => {
   const controls = parse<Controls>(useValue(controls$), DEFAULT_CONTROLS);
+  const languages = parse<Language[]>(useValue(languages$), []);
   const pickJson = useValue(pickResult$);
   const text = controls.arabic ? TEXT.ar : TEXT.en;
   const dir = controls.arabic ? "rtl" : "ltr";
@@ -231,37 +285,51 @@ export const FloatingButton = () => {
   const [picking, setPicking] = useState(false);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [highlight, setHighlight] = useState<Rect | null>(null);
+  const [chooser, setChooser] = useState<Chooser | null>(null);
   const [toast, setToast] = useState<string>("");
   const anchorRef = useRef<HTMLDivElement | null>(null);
+  const lastClick = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const chooserRef = useRef<Chooser | null>(null);
+  chooserRef.current = chooser;
+
   // The answer present when the component mounted is an old one: only newer answers are shown.
   const initial = parse<PickResult | null>(pickJson, null);
   const lastNonce = useRef<number>(initial && typeof initial.nonce === "number" ? initial.nonce : 0);
 
-  // The result of a click in click mode, shown for a few seconds.
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast((current) => (current === message ? "" : current)), 3500);
+  };
+
+  // Answers from C#: the choice to make for a clicked window, or the outcome.
   useEffect(() => {
     const result = parse<PickResult | null>(pickJson, null);
     if (!result || typeof result.nonce !== "number" || result.nonce === lastNonce.current) return;
     lastNonce.current = result.nonce;
     const label = result.label || "";
-    const message =
-      result.action === "off" ? text.resOff(label) :
-      result.action === "on" ? text.resOn(label) :
-      result.action === "none" ? text.resNone : text.resError;
-    setToast(message);
-    const timer = setTimeout(() => setToast(""), 3500);
-    return () => clearTimeout(timer);
+    if (result.action === "choose" && typeof result.token === "number") {
+      setChooser({ token: result.token, label, kind: result.kind || "panel", current: result.current || "default", x: lastClick.current.x, y: lastClick.current.y });
+      return;
+    }
+    if (result.action === "applied") {
+      const choice = result.choice || "default";
+      showToast(choice === "default" ? text.resDefault(label) : choice === "original" ? text.resOriginal(label) : text.resLanguage(label, result.languageName || choice));
+      return;
+    }
+    showToast(result.action === "none" ? text.resNone : text.resError);
   }, [pickJson]);
 
   // Click mode: capture every mouse event before the windows see it.
   useEffect(() => {
     if (!picking) {
       setHighlight(null);
+      setChooser(null);
       return;
     }
     const onMove = (e: MouseEvent) => {
       const el = elementOf(e.target);
-      if (!el || isOwnUi(el)) {
-        setHighlight(null);
+      if (!el || isOwnUi(el) || chooserRef.current) {
+        if (!chooserRef.current) setHighlight(null);
         return;
       }
       const panel = findPanel(el);
@@ -277,6 +345,11 @@ export const FloatingButton = () => {
     const onDown = (e: MouseEvent) => {
       if (isOwnUi(elementOf(e.target))) return;
       block(e);
+      if (chooserRef.current) {
+        // A click outside the open choice closes it.
+        setChooser(null);
+        return;
+      }
       if (e.button === 2) {
         setPicking(false);
         return;
@@ -284,6 +357,7 @@ export const FloatingButton = () => {
       if (e.button !== 0) return;
       const el = elementOf(e.target);
       if (!el) return;
+      lastClick.current = { x: e.clientX, y: e.clientY };
       const panel = findPanel(el);
       const texts = collectTexts(panel, PICK_LIMIT);
       trigger(group, "pick", JSON.stringify({ texts, label: texts.length > 0 ? texts[0] : "" }));
@@ -292,7 +366,8 @@ export const FloatingButton = () => {
       if (e.key === "Escape" || e.keyCode === 27) {
         e.preventDefault();
         e.stopPropagation();
-        setPicking(false);
+        if (chooserRef.current) setChooser(null);
+        else setPicking(false);
       }
     };
     document.addEventListener("mousemove", onMove, true);
@@ -321,9 +396,7 @@ export const FloatingButton = () => {
   const savedX = controls.x >= 0 ? controls.x : -1;
   const savedY = controls.y >= 0 ? controls.y : -1;
   const pos = dragPos || (savedX >= 0 && savedY >= 0 ? { x: Math.min(savedX, width - 50), y: Math.min(savedY, height - 50) } : null);
-  const anchorStyle = pos
-    ? { ...S.anchor, left: pos.x + "px", top: pos.y + "px" }
-    : { ...S.anchor, right: "24rem", top: "140rem" };
+  const anchorStyle = pos ? { ...S.anchor, left: pos.x + "px", top: pos.y + "px" } : { ...S.anchor, right: "24rem", top: "140rem" };
 
   const onButtonDown = (e: any) => {
     if (e.button !== 0) return;
@@ -362,19 +435,31 @@ export const FloatingButton = () => {
   };
 
   // The menu opens towards the middle of the screen.
-  let anchorX = width - 70;
-  let anchorY = 140;
-  if (pos) {
-    anchorX = pos.x;
-    anchorY = pos.y;
-  }
+  const anchorX = pos ? pos.x : width - 70;
+  const anchorY = pos ? pos.y : 140;
   const menuStyle: any = { ...S.menu };
   if (anchorX > width / 2) menuStyle.right = "0px";
   else menuStyle.left = "0px";
   if (anchorY > height / 2) menuStyle.bottom = BUTTON_SIZE + 8 + "rem";
   else menuStyle.top = BUTTON_SIZE + 8 + "rem";
 
+  // The choice popup next to the click, kept on screen (its size is about 300 x 420 at 1080p).
+  const chooserStyle: any = { ...S.chooser };
+  if (chooser) {
+    const scale = height / 1080;
+    const w = 330 * scale;
+    const h = 440 * scale;
+    chooserStyle.left = Math.max(8, Math.min(width - w, chooser.x + 12)) + "px";
+    chooserStyle.top = Math.max(8, Math.min(height - h, chooser.y - 20)) + "px";
+  }
+  const choose = (choice: string) => {
+    if (!chooser) return;
+    trigger(group, "applyPick", JSON.stringify({ token: chooser.token, choice }));
+    setChooser(null);
+  };
+
   const statusColor = !controls.enabled ? "#8a8f98" : controls.waiting > 0 ? "#ffb347" : "#4fc38a";
+  const otherLanguages = languages.filter((l) => l.code.toLowerCase() !== (controls.target || "").toLowerCase());
 
   return (
     <div style={S.layer} data-at-skip="" data-at-ui="">
@@ -388,6 +473,26 @@ export const FloatingButton = () => {
         </div>
       )}
       {toast !== "" && <div style={S.toast} dir={dir}>{toast}</div>}
+
+      {picking && chooser && (
+        <div style={chooserStyle} dir={dir}>
+          <div style={S.header}>
+            <div style={S.title}>{text.chooseTitle(chooser.kind)}</div>
+            <div style={S.close} title={text.close} onClick={() => setChooser(null)}>×</div>
+          </div>
+          <div style={{ ...S.bold, marginBottom: "6rem" }}>{chooser.label}</div>
+          <div style={S.option(chooser.current === "default")} onClick={() => choose("default")}>{text.optDefault(controls.targetName)}</div>
+          <div style={S.option(chooser.current === "original")} onClick={() => choose("original")}>{text.optOriginal}</div>
+          <div style={{ ...S.small, marginTop: "8rem" }}>{text.optOther}</div>
+          <div style={S.list(230)}>
+            {otherLanguages.map((l) => (
+              <div key={l.code} style={S.option(chooser.current.toLowerCase() === l.code.toLowerCase())} onClick={() => choose(l.code)}>
+                {l.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={anchorStyle} ref={anchorRef}>
         <div style={S.button(controls.enabled, picking)} title={text.title} onMouseDown={onButtonDown}>
@@ -409,8 +514,26 @@ export const FloatingButton = () => {
                 {controls.enabled ? text.turnOff : text.turnOn}
               </div>
             </div>
-            {controls.enabled && controls.target === "" && <div style={S.small}>{text.noTarget}</div>}
             {controls.enabled && controls.target !== "" && <div style={S.small}>{text.status(controls.translated, controls.waiting)}</div>}
+
+            <div style={S.section}>
+              <div style={S.bold}>{text.language}</div>
+              <div style={S.wrapRow}>
+                {MODES.map((m) => (
+                  <div key={m} style={S.chip(controls.mode === m)} onClick={() => trigger(group, "setTargetMode", m)}>{text.modes[m]}</div>
+                ))}
+              </div>
+              {controls.mode === "Manual" && (
+                <div style={S.list(140)}>
+                  {languages.map((l) => (
+                    <div key={l.code} style={S.option(controls.manual.toLowerCase() === l.code.toLowerCase())} onClick={() => trigger(group, "setManualLanguage", l.code)}>
+                      {l.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={S.small}>{text.current(controls.targetName)}</div>
+            </div>
 
             <div
               style={{ ...S.wide, ...S.btn(false, picking) }}
@@ -423,13 +546,15 @@ export const FloatingButton = () => {
             <div style={S.small}>{text.pickHint}</div>
 
             <div style={S.section}>
-              <div style={{ ...S.label, fontWeight: "bold" }}>{text.excluded}</div>
+              <div style={S.bold}>{text.custom}</div>
               {controls.entries.length === 0 && <div style={S.small}>{text.none}</div>}
-              <div style={S.list}>
+              <div style={S.list(180)}>
                 {controls.entries.map((entry) => (
                   <div key={entry.id} style={S.item}>
                     <div style={S.itemLabel}>{entry.label}</div>
-                    <div style={S.kind}>{entry.kind === "mod" ? text.kindMod : text.kindPanel}</div>
+                    <div style={S.kind}>
+                      {(entry.kind === "mod" ? text.kindMod : text.kindPanel) + " · " + (entry.language ? entry.languageName || entry.language : text.originalTag)}
+                    </div>
                     <div style={S.btn(true)} onClick={() => trigger(group, "restore", entry.id)}>{text.restore}</div>
                   </div>
                 ))}

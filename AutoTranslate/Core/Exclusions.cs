@@ -75,7 +75,7 @@ namespace AutoTranslate.Core
         public IReadOnlyList<string> Mods => m_ModList;
 
         /// <summary>Equal for equal lists (ignoring case and order).</summary>
-        public string Signature { get; }
+        public string Signature { get; private set; }
 
         /// <summary>Why exclusions.json could not be read; null when it was read (or created).</summary>
         public string FileError { get; }
@@ -90,6 +90,51 @@ namespace AutoTranslate.Core
 
         /// <summary>The entries of the "Excluded mods" options field.</summary>
         public IReadOnlyList<string> FieldMods { get; private set; } = new List<string>();
+
+        // Mods and windows the player set to another language than the main target (panels with a "language").
+        private Dictionary<string, string> m_ModLanguages = new Dictionary<string, string>(StringComparer.Ordinal);
+        private Dictionary<string, string> m_TextLanguages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The language a mod is shown in (any of its names may match), or null for the main target.</summary>
+        public string LanguageForMod(string assemblyName, string displayName, string title)
+        {
+            if (m_ModLanguages.Count == 0) return null;
+            foreach (var name in new[] { assemblyName, displayName, title })
+            {
+                var key = ModKey(name);
+                if (key.Length > 0 && m_ModLanguages.TryGetValue(key, out var language)) return language;
+            }
+            return null;
+        }
+
+        /// <summary>The language a text of a window set to another language is shown in, or null.</summary>
+        public string LanguageForText(string text)
+        {
+            if (m_TextLanguages.Count == 0 || string.IsNullOrEmpty(text)) return null;
+            return m_TextLanguages.TryGetValue(text.Trim(), out var language) ? language : null;
+        }
+
+        private void SetLanguages(List<PanelEntry> panels)
+        {
+            var mods = new Dictionary<string, string>(StringComparer.Ordinal);
+            var texts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var signature = new StringBuilder(Signature);
+            foreach (var panel in panels)
+            {
+                if (string.IsNullOrEmpty(panel.Language)) continue;
+                var key = ModKey(panel.Mod);
+                if (key.Length > 0) mods[key] = panel.Language;
+                foreach (var text in panel.Texts)
+                {
+                    var trimmed = text.Trim();
+                    if (trimmed.Length > 0) texts[trimmed] = panel.Language;
+                }
+                signature.Append("l:").Append(panel.Id).Append('=').Append(panel.Language).Append('\u0001');
+            }
+            m_ModLanguages = mods;
+            m_TextLanguages = texts;
+            Signature = signature.ToString();
+        }
 
         /// <summary>
         /// True when the whole text must stay as it is: it is in the "texts" list, or it is one of the protected terms.
@@ -231,6 +276,8 @@ namespace AutoTranslate.Core
             }
             foreach (var panel in panels)
             {
+                // A panel with a language is translated into it, not excluded.
+                if (!string.IsNullOrEmpty(panel.Language)) continue;
                 texts.AddRange(panel.Texts);
                 if (!string.IsNullOrEmpty(panel.Mod)) mods.Add(panel.Mod);
             }
@@ -256,12 +303,14 @@ namespace AutoTranslate.Core
             var protectedTerms = ProtectedTerms.Create(terms);
             if (protectedTerms.Ignored > 0)
                 Mod.Log.Info($"{protectedTerms.Ignored} protected term(s) were ignored (empty, without a letter or digit, longer than {ProtectedTerms.MaxTermLength} characters, or over {ProtectedTerms.MaxTerms}).");
-            return new Exclusions(protectedTerms, cleanTexts, cleanMods, error)
+            var result = new Exclusions(protectedTerms, cleanTexts, cleanMods, error)
             {
                 Panels = panels,
                 FileMods = fileMods,
                 FieldMods = fieldMods,
             };
+            result.SetLanguages(panels);
+            return result;
         }
 
         private static void ReadPanels(JObject root, List<PanelEntry> target)
@@ -275,6 +324,7 @@ namespace AutoTranslate.Core
                     Id = (string)obj["id"] ?? "",
                     Label = (string)obj["label"] ?? "",
                     Mod = (string)obj["mod"] ?? "",
+                    Language = ((string)obj["language"] ?? "").Trim(),
                 };
                 ReadList(obj, "texts", entry.Texts);
                 if (entry.Id.Length == 0 || (entry.Texts.Count == 0 && entry.Mod.Length == 0)) continue;
@@ -299,6 +349,7 @@ namespace AutoTranslate.Core
                     ["id"] = entry.Id,
                     ["label"] = entry.Label ?? "",
                     ["mod"] = entry.Mod ?? "",
+                    ["language"] = entry.Language ?? "",
                     ["texts"] = new JArray(entry.Texts),
                 });
             });
@@ -400,6 +451,8 @@ namespace AutoTranslate.Core
         public string Label = "";
         /// <summary>The mod's assembly name ("" when the panel could not be attributed to a mod).</summary>
         public string Mod = "";
+        /// <summary>"" = not translated (left as the mod wrote it); otherwise the language it is translated into.</summary>
+        public string Language = "";
         public readonly System.Collections.Generic.List<string> Texts = new System.Collections.Generic.List<string>();
     }
 }

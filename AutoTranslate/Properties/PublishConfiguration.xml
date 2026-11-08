@@ -18,9 +18,9 @@ Install it, start the game, and the mods you use appear in your language. Not on
 - **Translation engines**: Free automatic (default: two free Google endpoints, switching when one refuses), Google, DeepL (your key), LibreTranslate (your own or a public server), Microsoft Translator (your key).
 - **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Known texts appear instantly, even offline, and no text is ever sent for translation twice.
 - **Floating button while you play**: drag it anywhere on the screen. Click it to:
-  - turn translation on or off;
+  - turn translation on or off, and choose the language: automatic, the game's, Windows', or any of the 44;
   - see how many texts are translated and how many are waiting;
-  - start the **click mode**: click any mod window and its translation stops at once; click it again and it comes back. Your choices are saved, and everything you switched off is listed in the button's menu with a button to bring it back.
+  - start the **click mode**: click any mod window and choose how that mod is shown: with the main translation, in its original text, or **translated into another language** (for example one mod in English, another in French, the rest in your language). Your choices are saved and listed in the button's menu, each with a button to reset it.
 - **Exclusions**:
   - Words and names that are never translated (for example a place name stays as written, even inside a translated sentence).
   - Whole mods left exactly as they are.
@@ -60,9 +60,9 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - **محركات الترجمة**: مجاني تلقائي (الافتراضي: خدمتان مجانيتان من Google يتنقّل بينهما)، Google، DeepL (بمفتاحك)، LibreTranslate، Microsoft Translator (بمفتاحك).
 - **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النصوص المعروفة تظهر فوراً حتى بدون إنترنت، وما يُرسل أي نص للترجمة مرتين.
 - **أيقونة عائمة أثناء اللعب**: تسحبها لأي مكان، وتضغط عليها عشان:
-  - تشغّل الترجمة أو توقفها؛
+  - تشغّل الترجمة أو توقفها، وتختار اللغة: تلقائي، أو لغة اللعبة، أو لغة ويندوز، أو أي لغة من الـ 44؛
   - تشوف كم نص تترجم وكم ينتظر؛
-  - تشغّل **وضع التحكم بالضغط**: تضغط على نافذة أي مود فتتوقف ترجمته فوراً، وتضغط مرة ثانية فترجع. اختياراتك تنحفظ، وكل ما أوقفته يظهر في قائمة الأيقونة مع زر لإرجاعه.
+  - تشغّل **وضع التحكم بالضغط**: تضغط على نافذة أي مود وتختار كيف يظهر: بالترجمة العامة، أو بنصه الأصلي، أو **مترجم للغة ثانية** (مثلاً مود بالإنجليزي ومود بالفرنسي والباقي بلغتك). اختياراتك تنحفظ وتظهر في قائمة الأيقونة، وجنب كل واحد زر لإرجاعه.
 - **الاستثناءات**:
   - كلمات وأسماء ما تُترجم أبداً (مثل اسم مكان يبقى كما هو حتى داخل جملة مترجمة).
   - مودات كاملة تبقى زي ما هي.
@@ -101,12 +101,12 @@ With an online engine, **only the texts to be translated** are sent to the servi
 
 - Automatic translation of other mods and of any untranslated text on screen, into 44 languages, with five engine choices.
 - Permanent offline translation memory, master on/off switch, word and whole-mod exclusions.
-- Floating button with a click mode to switch translation off or on per mod window.
+- Floating button: language choice, and a click mode to show each mod translated, original, or in another language.
 - Override files, export of untranslated texts, and a status panel.
 
 - ترجمة تلقائية للمودات الأخرى ولأي نص غير مترجم على الشاشة إلى 44 لغة، بخمسة خيارات للمحرك.
 - ذاكرة ترجمة دائمة تعمل دون إنترنت، زر تشغيل/إيقاف، استثناء كلمات ومودات كاملة.
-- أيقونة عائمة مع وضع التحكم بالضغط لإيقاف الترجمة أو تشغيلها لكل نافذة مود.
+- أيقونة عائمة: اختيار اللغة، ووضع التحكم بالضغط لعرض كل مود مترجم أو بالأصل أو بلغة ثانية.
 - ملفات ترجمة يدوية، تصدير النصوص غير المترجمة، ولوحة حالة.
 	</ChangeLog>
 	<AccessLevel Value="Public" />

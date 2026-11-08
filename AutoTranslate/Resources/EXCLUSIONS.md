@@ -101,3 +101,9 @@ Every machine translation is saved permanently in `ModsData/AutoTranslate/Cache/
 - **العربية:** وضع التحكم بالضغط يكتب هنا. كل عنصر فيه `{ "id", "label", "mod", "texts" }`. لو النافذة لمود معروف،
   يكون `mod` اسم مكتبته ويُستثنى المود كاملاً؛ وإلا تبقى نصوص النافذة `texts` فقط بدون ترجمة. احذف العنصر (أو اضغط
   «ترجمة» في قائمة الأيقونة، أو اضغط على النافذة مرة ثانية في وضع التحكم بالضغط) لترجع ترجمتها.
+
+### "language" in a panel / حقل "language"
+- **English:** `""` = shown in its original text (excluded). A language code (for example `"fr"`, `"en"`, `"ar"`) = that
+  mod or window is translated into this language instead of the main target. Set from the click mode's choice.
+- **العربية:** `""` = يظهر بنصه الأصلي (مستثنى). رمز لغة (مثل `"fr"` أو `"en"` أو `"ar"`) = المود أو النافذة تُترجم لهذي
+  اللغة بدل اللغة العامة. يتحدد من اختيارك في وضع التحكم بالضغط.

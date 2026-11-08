@@ -34,6 +34,16 @@ namespace AutoTranslate.Core
         private readonly ConcurrentQueue<(Session session, string text)> m_Results = new ConcurrentQueue<(Session, string)>();
         private readonly List<string> m_Drained = new List<string>();
         private volatile Session m_Session;
+        /// <summary>
+        /// Sessions for other languages than the main target, created on demand: mods (or windows) the player chose to
+        /// see in another language. Each has its own engine, queue and translation memory. Main thread.
+        /// </summary>
+        private readonly Dictionary<string, Session> m_Extra = new Dictionary<string, Session>(StringComparer.OrdinalIgnoreCase);
+        private ServiceConfig m_Config;
+        /// <summary>Texts we injected in another language than the main target (the interface hook leaves them alone).</summary>
+        private HashSet<string> m_ForeignTexts = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>Localization texts of mods shown in another language: text to that language (for the interface hook).</summary>
+        private Dictionary<string, string> m_ModLanguageTexts = new Dictionary<string, string>(StringComparer.Ordinal);
         private volatile HashSet<string> m_GameTexts = new HashSet<string>(StringComparer.Ordinal);
         private volatile Exclusions m_Exclusions = Exclusions.Empty;
         private volatile HashSet<string> m_ExcludedModTexts = new HashSet<string>(StringComparer.Ordinal);
@@ -87,10 +97,16 @@ namespace AutoTranslate.Core
         /// exclusion list never have one (checked first, before the override and cache lookups); overrides always win
         /// over the cache.
         /// </summary>
-        public bool TryGet(string text, TextOrigin origin, out string translated)
+        public bool TryGet(string text, TextOrigin origin, out string translated) => TryGet(text, origin, null, out translated);
+
+        /// <summary>
+        /// The same lookup in <paramref name="language"/> (null or the main target: the main session). Another language
+        /// starts its session (and the loading of its memory) on first use. Main thread.
+        /// </summary>
+        public bool TryGet(string text, TextOrigin origin, string language, out string translated)
         {
             translated = null;
-            var session = m_Session;
+            var session = SessionFor(language);
             if (session == null || string.IsNullOrEmpty(text)) return false;
             if (origin == TextOrigin.Interface && !session.Interfaces) return false;
             if (m_Exclusions.IsExcludedText(text)) return false;
@@ -289,9 +305,12 @@ namespace AutoTranslate.Core
         internal long SavedBytes => m_Session?.Cache.FileSize ?? 0;
 
         /// <summary>Queues texts with an explicit source language ("en" or "auto").</summary>
-        internal void Request(IEnumerable<string> texts, TextOrigin origin, string sourceLanguage)
+        internal void Request(IEnumerable<string> texts, TextOrigin origin, string sourceLanguage) => Request(texts, origin, sourceLanguage, null);
+
+        /// <summary>Queues texts for translation into <paramref name="language"/> (null: the main target).</summary>
+        internal void Request(IEnumerable<string> texts, TextOrigin origin, string sourceLanguage, string language)
         {
-            var session = m_Session;
+            var session = SessionFor(language);
             if (session == null || texts == null) return;
             if (origin == TextOrigin.Interface && !session.Interfaces) return;
             // The translation memory is still loading: the texts may be in it. Nothing is queued now; the load raises
@@ -349,6 +368,7 @@ namespace AutoTranslate.Core
             StopSession();
             m_Paused = false;
             m_LastError = "";
+            m_Config = config;
 
             if (config == null || !config.Enabled || string.IsNullOrEmpty(config.Target))
             {
@@ -394,6 +414,7 @@ namespace AutoTranslate.Core
             var session = m_Session;
             if (session == null || session.Interfaces == enabled) return;
             session.Interfaces = enabled;
+            foreach (var extra in m_Extra.Values) extra.Interfaces = enabled;
             BumpVersion();
             RaiseReset();
         }
@@ -405,6 +426,11 @@ namespace AutoTranslate.Core
             if (session == null) return;
             session.Overrides = Overrides.Load(session.Target);
             lock (session.Lock) session.Failed.Clear();
+            foreach (var extra in m_Extra.Values)
+            {
+                extra.Overrides = Overrides.Load(extra.Target);
+                lock (extra.Lock) extra.Failed.Clear();
+            }
             m_LastError = "";
             BumpVersion();
             RaiseReset();
@@ -437,6 +463,10 @@ namespace AutoTranslate.Core
             {
                 lock (session.Lock) session.Failed.Clear();
             }
+            foreach (var extra in m_Extra.Values)
+            {
+                lock (extra.Lock) extra.Failed.Clear();
+            }
             Mod.Log.Info("Translation cache cleared.");
             BumpVersion();
             RaiseReset();
@@ -459,7 +489,8 @@ namespace AutoTranslate.Core
             m_Drained.Clear();
             while (m_Results.TryDequeue(out var result))
             {
-                if (result.session == session) m_Drained.Add(result.text);
+                if (result.session == session || (result.session != null && m_Extra.TryGetValue(result.session.Target, out var extra) && extra == result.session))
+                    m_Drained.Add(result.text);
             }
             if (m_Drained.Count == 0) return;
             BumpVersion();
@@ -497,6 +528,60 @@ namespace AutoTranslate.Core
             }
         }
 
+        // ------------------------------------------------------------------ other languages
+
+        /// <summary>The session of a language: the main one for null, "" or the main target; null when translation is off.</summary>
+        private Session SessionFor(string language)
+        {
+            var main = m_Session;
+            if (main == null || string.IsNullOrEmpty(language) || string.Equals(language, main.Target, StringComparison.OrdinalIgnoreCase)) return main;
+            if (m_Disposed) return null;
+            if (m_Extra.TryGetValue(language, out var existing)) return existing;
+
+            ITranslationProvider provider = null;
+            try
+            {
+                if (m_Config != null) provider = ProviderFactory.Create(m_Config.Provider);
+            }
+            catch (Exception e)
+            {
+                Mod.Log.Warn($"The translation engine for {language} could not be started: {e.Message}");
+            }
+            var cache = GetCache(language);
+            var session = new Session(language, main.Interfaces, provider, cache, Overrides.Load(language));
+            m_Extra[language] = session;
+            var load = cache.EnsureLoading();
+            if (!cache.IsLoaded) load.ContinueWith(_ => { if (m_Session == main) m_ResetPending = true; }, TaskScheduler.Default);
+            if (provider != null) session.Loop = Task.Run(() => RunAsync(session));
+            Mod.Log.Info($"Also translating into {language} (mods or windows chosen for that language).");
+            return session;
+        }
+
+        /// <summary>Replaces the texts injected in other languages (built by the localization scan). Main thread.</summary>
+        internal void SetForeignTexts(HashSet<string> texts) => m_ForeignTexts = texts ?? new HashSet<string>(StringComparer.Ordinal);
+
+        internal void AddForeignText(string text)
+        {
+            if (!string.IsNullOrEmpty(text)) m_ForeignTexts.Add(text.Trim());
+        }
+
+        /// <summary>A text we put on screen in another language than the main target: the interface hook leaves it.</summary>
+        internal bool IsForeignText(string text) => !string.IsNullOrEmpty(text) && m_ForeignTexts.Count > 0 && m_ForeignTexts.Contains(text.Trim());
+
+        internal void SetModLanguageTexts(Dictionary<string, string> texts) => m_ModLanguageTexts = texts ?? new Dictionary<string, string>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// The language an interface text must be translated into: a window or mod the player set to another language
+        /// (its saved texts, or a localization text of that mod); null for the main target.
+        /// </summary>
+        internal string InterfaceLanguageFor(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            var byPanel = m_Exclusions.LanguageForText(text);
+            if (byPanel != null) return byPanel;
+            return m_ModLanguageTexts.Count > 0 && m_ModLanguageTexts.TryGetValue(text.Trim(), out var language) ? language : null;
+        }
+
         // ------------------------------------------------------------------ internals
 
         private static bool LookUp(Session session, string text, out string translated)
@@ -517,7 +602,7 @@ namespace AutoTranslate.Core
                     cache.Invalidated += removed =>
                     {
                         // Entries were forgotten: lookups made before must be repeated (raised on the main thread by Pump).
-                        if (removed > 0 && m_Session != null && ReferenceEquals(m_Session.Cache, cache)) m_ResetPending = true;
+                        if (removed > 0 && m_Session != null) m_ResetPending = true;
                     };
                     m_Caches[language] = cache;
                 }
@@ -527,9 +612,16 @@ namespace AutoTranslate.Core
 
         private void StopSession()
         {
+            foreach (var extra in m_Extra.Values) StopOne(extra);
+            m_Extra.Clear();
             var session = m_Session;
             if (session == null) return;
             m_Session = null;
+            StopOne(session);
+        }
+
+        private static void StopOne(Session session)
+        {
             try { session.Cts.Cancel(); }
             catch (Exception) { /* already cancelled */ }
             var provider = session.Provider;

@@ -55,6 +55,8 @@ namespace AutoTranslate.Interface
         private readonly HashSet<string> m_Sent = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>Texts the hook asked for that the service is translating.</summary>
         private readonly HashSet<string> m_Awaiting = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>Waiting texts that go into another language than the main target (a window or mod set to it).</summary>
+        private readonly Dictionary<string, string> m_AwaitingLanguage = new Dictionary<string, string>(StringComparer.Ordinal);
         /// <summary>Answers waiting for the next push.</summary>
         private readonly Dictionary<string, string> m_Outbox = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -161,6 +163,7 @@ namespace AutoTranslate.Interface
         {
             m_Sent.Clear();
             m_Awaiting.Clear();
+            m_AwaitingLanguage.Clear();
             m_Outbox.Clear();
         }
 
@@ -233,7 +236,7 @@ namespace AutoTranslate.Interface
                 return;
             }
 
-            List<string> toRequest = null;
+            Dictionary<string, List<string>> toRequest = null;
             var handled = 0;
             foreach (var token in array)
             {
@@ -247,7 +250,8 @@ namespace AutoTranslate.Interface
                 // Asked again after an answer was sent: the hook lost it (binding updates can coalesce), send it again.
                 m_Sent.Remove(text);
 
-                if (!IsCandidate(text))
+                // Text we put there in another language (a mod set to it): not translated again.
+                if (m_Service.IsForeignText(text) || !IsCandidate(text))
                 {
                     m_Outbox[text] = "";
                     continue;
@@ -255,9 +259,11 @@ namespace AutoTranslate.Interface
 
                 string translated;
                 bool hit;
+                string language;
                 try
                 {
-                    hit = m_Service.TryGet(text, TextOrigin.Interface, out translated);
+                    language = m_Service.InterfaceLanguageFor(text);
+                    hit = m_Service.TryGet(text, TextOrigin.Interface, language, out translated);
                 }
                 catch (Exception e)
                 {
@@ -272,7 +278,11 @@ namespace AutoTranslate.Interface
                 else if (m_Awaiting.Count < MaxAwaiting)
                 {
                     m_Awaiting.Add(text);
-                    (toRequest ?? (toRequest = new List<string>())).Add(text);
+                    if (language != null) m_AwaitingLanguage[text] = language;
+                    toRequest = toRequest ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    var group = language ?? "";
+                    if (!toRequest.TryGetValue(group, out var list)) toRequest[group] = list = new List<string>();
+                    list.Add(text);
                 }
                 else
                 {
@@ -281,14 +291,21 @@ namespace AutoTranslate.Interface
             }
 
             if (toRequest == null) return;
-            try
+            foreach (var pair in toRequest)
             {
-                m_Service.Request(toRequest, TextOrigin.Interface);
-            }
-            catch (Exception e)
-            {
-                Mod.Log.Warn(e, "Auto Translate: queueing interface texts failed");
-                foreach (var text in toRequest) m_Awaiting.Remove(text);
+                try
+                {
+                    m_Service.Request(pair.Value, TextOrigin.Interface, "auto", pair.Key.Length == 0 ? null : pair.Key);
+                }
+                catch (Exception e)
+                {
+                    Mod.Log.Warn(e, "Auto Translate: queueing interface texts failed");
+                    foreach (var text in pair.Value)
+                    {
+                        m_Awaiting.Remove(text);
+                        m_AwaitingLanguage.Remove(text);
+                    }
+                }
             }
         }
 
@@ -368,7 +385,7 @@ namespace AutoTranslate.Interface
                 bool hit;
                 try
                 {
-                    hit = m_Service.TryGet(text, TextOrigin.Interface, out translated);
+                    hit = m_Service.TryGet(text, TextOrigin.Interface, LanguageOf(text), out translated);
                 }
                 catch (Exception e)
                 {
@@ -381,13 +398,15 @@ namespace AutoTranslate.Interface
             foreach (var text in found) Resolve(text);
         }
 
+        private string LanguageOf(string text) => m_AwaitingLanguage.TryGetValue(text, out var language) ? language : null;
+
         private void Resolve(string text)
         {
             string translated;
             bool hit;
             try
             {
-                hit = m_Service.TryGet(text, TextOrigin.Interface, out translated);
+                hit = m_Service.TryGet(text, TextOrigin.Interface, LanguageOf(text), out translated);
             }
             catch (Exception e)
             {
@@ -396,6 +415,7 @@ namespace AutoTranslate.Interface
             }
             if (!hit) return;
             m_Awaiting.Remove(text);
+            m_AwaitingLanguage.Remove(text);
             if (!m_Sent.Contains(text)) m_Outbox[text] = Answer(text, translated);
         }
 

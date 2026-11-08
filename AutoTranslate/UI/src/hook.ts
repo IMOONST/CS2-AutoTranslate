@@ -248,8 +248,12 @@ const remember = (node: Node) => {
   }
 };
 
-const setDir = (el: Node | null) => {
-  if (!config.rtl || !el || el.nodeType !== ELEMENT_NODE) return;
+/** Right-to-left letters (Hebrew, Arabic and their presentation forms). */
+const RTL_CHAR = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
+
+/** Lets the browser lay out right-to-left text: for an RTL target, or any translation written in an RTL script. */
+const setDir = (el: Node | null, translation?: string) => {
+  if (!(config.rtl || (translation !== undefined && RTL_CHAR.test(translation))) || !el || el.nodeType !== ELEMENT_NODE) return;
   const element = el as Element;
   if (element.hasAttribute("dir")) return;
   element.setAttribute("dir", "auto");
@@ -316,7 +320,7 @@ const processText = (node: Text, checkAncestors: boolean) => {
   textState.set(node, { orig: value, shown });
   remember(node);
   node.nodeValue = shown;
-  setDir(node.parentNode);
+  setDir(node.parentNode, translation);
 };
 
 const processAttribute = (el: Element, name: string) => {
