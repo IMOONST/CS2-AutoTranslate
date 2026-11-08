@@ -71,7 +71,6 @@ namespace AutoTranslate.Providers
             Add("th", "ไทย", Script.Thai, "th", "TH", "th", "th");
             Add("vi", "Tiếng Việt", Script.Latin, "vi", "VI", "vi", "vi");
             Add("fa", "فارسی", Script.Arabic, "fa", null, "fa", "fa");
-            Add("he", "עברית", Script.Hebrew, "iw", "HE", "he", "he");
             Add("ur", "اردو", Script.Arabic, "ur", null, "ur", "ur");
             Add("bn", "বাংলা", Script.Bengali, "bn", null, "bn", "bn");
             Add("sv", "Svenska", Script.Latin, "sv", "SV", "sv", "sv");
@@ -108,6 +107,12 @@ namespace AutoTranslate.Providers
                 Libre = libre,
             };
             SupportedList.Add(iso);
+        }
+
+        /// <summary>True for a language the mod never translates into (Hebrew), whatever the game, Windows or a saved setting says.</summary>
+        public static bool IsBlocked(string isoCode)
+        {
+            return string.Equals(Normalize(isoCode), "he", StringComparison.Ordinal);
         }
 
         /// <summary>The languages offered in the options dropdown (Arabic first). Every one has a <see cref="DisplayName"/>.</summary>

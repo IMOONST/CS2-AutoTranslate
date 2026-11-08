@@ -1,13 +1,13 @@
 # Auto Translate: Any Mod
 
-A Cities: Skylines II code mod that translates your mods, and any untranslated text on screen, into your language automatically. 44 languages, a permanent offline translation memory, exclusions, and a floating button to switch translation off or on per mod window.
+A Cities: Skylines II code mod that translates your mods, and any untranslated text on screen, into your language automatically. 43 languages, a permanent offline translation memory, exclusions, and a floating button to switch translation off or on per mod window.
 
 [العربية](#مترجم-المودات-التلقائي)
 
 ## Features
 - Translates other mods' localization (every installed mod without your language) and the text mod panels draw directly.
 - Translates any English text on screen that has no translation; the game's own translated texts are never touched.
-- Target language: the game's, otherwise Windows', or one of 44 chosen manually.
+- Target language: the game's, otherwise Windows', or one of 43 chosen manually.
 - Engines: Free automatic (two free Google endpoints with failover and back-off), Google, DeepL, LibreTranslate, Microsoft Translator.
 - Permanent translation memory (`ModsData/AutoTranslate/cache/<language>.json`): loaded at startup, saved within about 2 seconds, never translates a text twice.
 - Floating button: drag anywhere; on/off; target language; click mode to show one mod translated, original, or in another language.
@@ -47,12 +47,12 @@ MIT, see [LICENSE](LICENSE).
 
 # مترجم المودات التلقائي
 
-مود للعبة Cities: Skylines II يترجم المودات، وأي نص غير مترجم على الشاشة، إلى لغتك تلقائياً. 44 لغة، وذاكرة ترجمة دائمة تعمل بدون إنترنت، واستثناءات، وأيقونة عائمة توقف الترجمة أو تشغّلها لكل نافذة مود.
+مود للعبة Cities: Skylines II يترجم المودات، وأي نص غير مترجم على الشاشة، إلى لغتك تلقائياً. 43 لغة، وذاكرة ترجمة دائمة تعمل بدون إنترنت، واستثناءات، وأيقونة عائمة توقف الترجمة أو تشغّلها لكل نافذة مود.
 
 ## الميزات
 - يترجم نصوص المودات اللي ما فيها لغتك، والنصوص اللي تعرضها نوافذها مباشرة.
 - يترجم أي نص إنجليزي على الشاشة ما له ترجمة، وما يلمس ترجمات اللعبة نفسها.
-- اللغة: لغة اللعبة، وإلا لغة ويندوز، أو تختار من 44 لغة.
+- اللغة: لغة اللعبة، وإلا لغة ويندوز، أو تختار من 43 لغة.
 - محركات: مجاني تلقائي، Google، DeepL، LibreTranslate، Microsoft.
 - ذاكرة ترجمة دائمة: تتحمّل عند التشغيل، وتنحفظ خلال ثانيتين تقريباً، وما يترجم نص مرتين.
 - أيقونة عائمة: تسحبها لأي مكان، تشغيل وإيقاف، اختيار اللغة، ووضع التحكم بالضغط لعرض كل مود مترجم أو بالأصل أو بلغة ثانية.

@@ -174,19 +174,20 @@ namespace AutoTranslate.Core
                     break;
                 default:
                     var game = GameLanguage();
-                    if (!string.IsNullOrEmpty(game) && !TextRules.IsEnglish(game))
+                    if (!string.IsNullOrEmpty(game) && !TextRules.IsEnglish(game) && !LanguageCodes.IsBlocked(game))
                     {
                         target = game;
                     }
                     else
                     {
                         var system = SystemLanguage;
-                        if (!string.IsNullOrEmpty(system) && !TextRules.IsEnglish(system)) target = system;
+                        if (!string.IsNullOrEmpty(system) && !TextRules.IsEnglish(system) && !LanguageCodes.IsBlocked(system)) target = system;
                         else config.Reason = OffReason.AllEnglish;
                     }
                     break;
             }
 
+            if (config.Reason == OffReason.None && LanguageCodes.IsBlocked(target)) config.Reason = OffReason.NoLanguage;
             if (config.Reason != OffReason.None) return config;
             config.Enabled = true;
             config.Target = target;

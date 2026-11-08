@@ -121,7 +121,7 @@ namespace AutoTranslate.Core
             var signature = new StringBuilder(Signature);
             foreach (var panel in panels)
             {
-                if (string.IsNullOrEmpty(panel.Language)) continue;
+                if (string.IsNullOrEmpty(panel.Language) || LanguageCodes.IsBlocked(panel.Language)) continue;
                 var key = ModKey(panel.Mod);
                 if (key.Length > 0) mods[key] = panel.Language;
                 foreach (var text in panel.Texts)

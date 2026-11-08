@@ -194,7 +194,7 @@ const findPanel = (start: Element): Element => {
 // Styles (inline: one small component, no stylesheet to load)
 
 const S = {
-  layer: { position: "absolute", left: "0px", top: "0px", width: "100vw", height: "100vh", pointerEvents: "none" } as any,
+  layer: { position: "absolute", left: "0px", top: "0px", width: "100vw", height: "100vh", pointerEvents: "none", zIndex: 9999 } as any,
   anchor: { position: "absolute", width: BUTTON_SIZE + "rem", height: BUTTON_SIZE + "rem", pointerEvents: "auto" } as any,
   button: (on: boolean, picking: boolean) => ({
     width: BUTTON_SIZE + "rem", height: BUTTON_SIZE + "rem", borderRadius: "50%",
@@ -263,6 +263,32 @@ const S = {
 
 interface Rect { left: number; top: number; width: number; height: number; }
 
+/** The choice popup's size in pixels (300rem wide, about 440rem high at 1080p). */
+const chooserSize = () => {
+  const scale = (window.innerHeight || 1080) / 1080;
+  return { w: 330 * scale, h: 450 * scale };
+};
+
+/**
+ * Where the choice popup opens: beside the clicked window (right, else left, else above or below it), never on top of
+ * it, because mod windows can be drawn above this layer and would hide the popup.
+ */
+const chooserPlace = (rect: Rect | null, click: { x: number; y: number }) => {
+  const width = window.innerWidth || 1920;
+  const height = window.innerHeight || 1080;
+  const size = chooserSize();
+  const gap = 10;
+  if (!rect) return { x: click.x + 12, y: click.y - 20 };
+  const y = Math.max(8, Math.min(height - size.h, rect.top));
+  if (rect.left + rect.width + gap + size.w <= width) return { x: rect.left + rect.width + gap, y };
+  if (rect.left - gap - size.w >= 0) return { x: rect.left - gap - size.w, y };
+  const x = Math.max(8, Math.min(width - size.w, rect.left));
+  if (rect.top + rect.height + gap + size.h <= height) return { x, y: rect.top + rect.height + gap };
+  if (rect.top - gap - size.h >= 0) return { x, y: rect.top - gap - size.h };
+  // The window fills the screen: the side with the most room.
+  return { x: rect.left > width - rect.left - rect.width ? 8 : width - size.w - 8, y };
+};
+
 interface Chooser {
   token: number;
   label: string;
@@ -289,6 +315,7 @@ export const FloatingButton = () => {
   const [toast, setToast] = useState<string>("");
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const lastClick = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const lastRect = useRef<Rect | null>(null);
   const chooserRef = useRef<Chooser | null>(null);
   chooserRef.current = chooser;
 
@@ -308,7 +335,8 @@ export const FloatingButton = () => {
     lastNonce.current = result.nonce;
     const label = result.label || "";
     if (result.action === "choose" && typeof result.token === "number") {
-      setChooser({ token: result.token, label, kind: result.kind || "panel", current: result.current || "default", x: lastClick.current.x, y: lastClick.current.y });
+      const place = chooserPlace(lastRect.current, lastClick.current);
+      setChooser({ token: result.token, label, kind: result.kind || "panel", current: result.current || "default", x: place.x, y: place.y });
       return;
     }
     if (result.action === "applied") {
@@ -359,6 +387,8 @@ export const FloatingButton = () => {
       if (!el) return;
       lastClick.current = { x: e.clientX, y: e.clientY };
       const panel = findPanel(el);
+      const r = panel.getBoundingClientRect();
+      lastRect.current = { left: r.left, top: r.top, width: r.width, height: r.height };
       const texts = collectTexts(panel, PICK_LIMIT);
       trigger(group, "pick", JSON.stringify({ texts, label: texts.length > 0 ? texts[0] : "" }));
     };
@@ -443,15 +473,34 @@ export const FloatingButton = () => {
   if (anchorY > height / 2) menuStyle.bottom = BUTTON_SIZE + 8 + "rem";
   else menuStyle.top = BUTTON_SIZE + 8 + "rem";
 
-  // The choice popup next to the click, kept on screen (its size is about 300 x 420 at 1080p).
+  // The choice popup beside the clicked window (placed by chooserPlace), kept on screen; its title bar drags it.
   const chooserStyle: any = { ...S.chooser };
   if (chooser) {
-    const scale = height / 1080;
-    const w = 330 * scale;
-    const h = 440 * scale;
-    chooserStyle.left = Math.max(8, Math.min(width - w, chooser.x + 12)) + "px";
-    chooserStyle.top = Math.max(8, Math.min(height - h, chooser.y - 20)) + "px";
+    const size = chooserSize();
+    chooserStyle.left = Math.max(8, Math.min(width - size.w, chooser.x)) + "px";
+    chooserStyle.top = Math.max(8, Math.min(height - size.h, chooser.y)) + "px";
   }
+  const onChooserDown = (e: any) => {
+    if (e.button !== 0 || !chooser) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const fromX = chooser.x;
+    const fromY = chooser.y;
+    const onMove = (ev: MouseEvent) => {
+      const x = fromX + ev.clientX - startX;
+      const y = fromY + ev.clientY - startY;
+      setChooser((c) => (c ? { ...c, x, y } : c));
+    };
+    // window (not document): the click mode blocks mouse events on document while it is on.
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove, true);
+      window.removeEventListener("mouseup", onUp, true);
+    };
+    window.addEventListener("mousemove", onMove, true);
+    window.addEventListener("mouseup", onUp, true);
+  };
   const choose = (choice: string) => {
     if (!chooser) return;
     trigger(group, "applyPick", JSON.stringify({ token: chooser.token, choice }));
@@ -476,7 +525,7 @@ export const FloatingButton = () => {
 
       {picking && chooser && (
         <div style={chooserStyle} dir={dir}>
-          <div style={S.header}>
+          <div style={{ ...S.header, cursor: "move" }} onMouseDown={onChooserDown}>
             <div style={S.title}>{text.chooseTitle(chooser.kind)}</div>
             <div style={S.close} title={text.close} onClick={() => setChooser(null)}>×</div>
           </div>

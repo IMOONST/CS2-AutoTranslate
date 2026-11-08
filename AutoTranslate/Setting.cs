@@ -288,7 +288,7 @@ namespace AutoTranslate
                     displayName = LocalizedString.Value(LanguageCodes.DisplayName(code) + " (" + code + ")"),
                 });
             }
-            if (!hasCurrent && !string.IsNullOrEmpty(ManualLanguage))
+            if (!hasCurrent && !string.IsNullOrEmpty(ManualLanguage) && !LanguageCodes.IsBlocked(ManualLanguage))
             {
                 // A code typed into the settings file by hand stays selectable.
                 items.Add(new DropdownItem<string>

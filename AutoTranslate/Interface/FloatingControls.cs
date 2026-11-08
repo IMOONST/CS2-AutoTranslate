@@ -303,6 +303,14 @@ namespace AutoTranslate.Interface
                     ownerVotes = pair.Value;
                 }
             }
+            // A mod's name is shown only when it clearly owns the window: two of its own texts at least, and a quarter
+            // of the window's. A window drawn by a mod without localization (its texts are not in any mod's files) is
+            // otherwise matched to whichever mod shares a word or two with it; it is handled as an unnamed window.
+            if (owner != null && (ownerVotes < 2 || ownerVotes * 4 < texts.Count))
+            {
+                owner = null;
+                english.Clear();
+            }
 
             var pending = new PendingPick { Token = ++m_PickNonce, Owner = owner };
             // The texts to save: English when the window shows a translation of a localization text.

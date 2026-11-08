@@ -259,12 +259,19 @@ namespace AutoTranslate.Core
             var system = s_Instance;
             if (system == null || texts == null || texts.Count == 0) return votes;
             var owner = new Dictionary<string, ModEntry>(StringComparer.Ordinal);
+            // Common words ("Default", "Reset", "OK") appear in many mods: a text found in two mods tells nothing.
+            var shared = new HashSet<string>(StringComparer.Ordinal);
 
             void Check(string value, KeyInfo info)
             {
                 if (string.IsNullOrEmpty(value)) return;
                 var key = TextRules.HasOuterWhitespace(value) ? value.Trim() : value;
-                if (!texts.Contains(key) || owner.ContainsKey(key)) return;
+                if (!texts.Contains(key)) return;
+                if (owner.TryGetValue(key, out var known))
+                {
+                    if (!ReferenceEquals(known, info.Mod)) shared.Add(key);
+                    return;
+                }
                 owner[key] = info.Mod;
                 if (english != null && !string.IsNullOrEmpty(info.English)) english[key] = info.English.Trim();
             }
@@ -277,11 +284,13 @@ namespace AutoTranslate.Core
                 Check(info.TargetValue, info);
                 if (system.m_Desired.TryGetValue(pair.Key, out var desired)) Check(desired, info);
                 if (system.m_Written.TryGetValue(pair.Key, out var written)) Check(written, info);
-                if (owner.Count == texts.Count) break;
             }
 
-            foreach (var mod in owner.Values)
-                votes[mod] = votes.TryGetValue(mod, out var count) ? count + 1 : 1;
+            foreach (var pair in owner)
+            {
+                if (shared.Contains(pair.Key)) continue;
+                votes[pair.Value] = votes.TryGetValue(pair.Value, out var count) ? count + 1 : 1;
+            }
             return votes;
         }
 

@@ -2,7 +2,7 @@
 <Publish>
 	<!--No ModId: Paradox Mods assigns it on the first publish (PublishNewMod) and the toolchain writes it here.-->
 	<DisplayName Value="Auto Translate: Any Mod" />
-	<ShortDescription Value="Translates your mods, and any untranslated text on screen, into your language automatically. 44 languages, permanent offline memory, per-mod control." />
+	<ShortDescription Value="Translates your mods, and any untranslated text on screen, into your language automatically. 43 languages, permanent offline memory, per-mod control." />
 	<LongDescription>
 # Auto Translate: Any Mod
 
@@ -14,11 +14,11 @@ Install it, start the game, and the mods you use appear in your language. Not on
 - **Translates other mods**: the localization of every installed mod that has no translation for your language, and the text mod panels and windows draw directly.
 - **Any untranslated text on screen**: text the game or a mod builds while you play, with no translation of its own.
 - **Never changes the game's own translations.**
-- **Picks the language by itself**: the game's language, otherwise your Windows language, or choose from **44 languages**, including languages the game does not offer (Arabic, Hindi, Indonesian, Vietnamese, Ukrainian and more).
+- **Picks the language by itself**: the game's language, otherwise your Windows language, or choose from **43 languages**, including languages the game does not offer (Arabic, Hindi, Indonesian, Vietnamese, Ukrainian and more).
 - **Translation engines**: Free automatic (default: two free Google endpoints, switching when one refuses), Google, DeepL (your key), LibreTranslate (your own or a public server), Microsoft Translator (your key).
 - **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Known texts appear instantly, even offline, and no text is ever sent for translation twice.
 - **Floating button while you play**: drag it anywhere on the screen. Click it to:
-  - turn translation on or off, and choose the language: automatic, the game's, Windows', or any of the 44;
+  - turn translation on or off, and choose the language: automatic, the game's, Windows', or any of the 43;
   - see how many texts are translated and how many are waiting;
   - start the **click mode**: click any mod window and choose how that mod is shown: with the main translation, in its original text, or **translated into another language** (for example one mod in English, another in French, the rest in your language). Your choices are saved and listed in the button's menu, each with a button to reset it.
 - **Exclusions**:
@@ -56,7 +56,7 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - **يترجم المودات الأخرى**: نصوص الترجمة لكل مود ما فيه لغتك، والنصوص اللي تعرضها لوحات ونوافذ المودات مباشرة.
 - **أي نص غير مترجم على الشاشة**: النصوص اللي تبنيها اللعبة أو المودات وقت اللعب وما لها ترجمة.
 - **ما يغيّر ترجمات اللعبة نفسها.**
-- **يختار اللغة بنفسه**: لغة اللعبة، وإلا لغة ويندوز، أو تختار من **44 لغة** منها لغات ما توفرها اللعبة مثل العربية.
+- **يختار اللغة بنفسه**: لغة اللعبة، وإلا لغة ويندوز، أو تختار من **43 لغة** منها لغات ما توفرها اللعبة مثل العربية.
 - **محركات الترجمة**: مجاني تلقائي (الافتراضي: خدمتان مجانيتان من Google يتنقّل بينهما)، Google، DeepL (بمفتاحك)، LibreTranslate، Microsoft Translator (بمفتاحك).
 - **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النصوص المعروفة تظهر فوراً حتى بدون إنترنت، وما يُرسل أي نص للترجمة مرتين.
 - **أيقونة عائمة أثناء اللعب**: تسحبها لأي مكان، وتضغط عليها عشان:
@@ -99,12 +99,12 @@ With an online engine, **only the texts to be translated** are sent to the servi
 	<ChangeLog>
 1.0.0 - First release / الإصدار الأول
 
-- Automatic translation of other mods and of any untranslated text on screen, into 44 languages, with five engine choices.
+- Automatic translation of other mods and of any untranslated text on screen, into 43 languages, with five engine choices.
 - Permanent offline translation memory, master on/off switch, word and whole-mod exclusions.
 - Floating button: language choice, and a click mode to show each mod translated, original, or in another language.
 - Override files, export of untranslated texts, and a status panel.
 
-- ترجمة تلقائية للمودات الأخرى ولأي نص غير مترجم على الشاشة إلى 44 لغة، بخمسة خيارات للمحرك.
+- ترجمة تلقائية للمودات الأخرى ولأي نص غير مترجم على الشاشة إلى 43 لغة، بخمسة خيارات للمحرك.
 - ذاكرة ترجمة دائمة تعمل دون إنترنت، زر تشغيل/إيقاف، استثناء كلمات ومودات كاملة.
 - أيقونة عائمة: اختيار اللغة، ووضع التحكم بالضغط لعرض كل مود مترجم أو بالأصل أو بلغة ثانية.
 - ملفات ترجمة يدوية، تصدير النصوص غير المترجمة، ولوحة حالة.
