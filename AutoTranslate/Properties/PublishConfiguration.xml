@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Publish>
-	<!--No ModId: Paradox Mods assigns it on the first publish (PublishNewMod) and the toolchain writes it here.-->
+	<!--Assigned on the first publish (2026-11-08).-->
+	<ModId Value="166812" />
 	<DisplayName Value="Auto Translate: Any Mod" />
 	<ShortDescription Value="Translates the mods you pick into your language: click a mod's window or options page and choose. 43 languages, offline memory, interface in 13 languages." />
 	<LongDescription>
