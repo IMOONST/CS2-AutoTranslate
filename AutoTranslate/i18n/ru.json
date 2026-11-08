@@ -135,5 +135,7 @@
  "Original text: {label}": "Исходный текст: {label}",
  "This is a game window, or it has nothing to translate.": "Это окно игры, или в нём нечего переводить.",
  "Could not save exclusions.json (see the log).": "Не удалось сохранить exclusions.json (см. журнал).",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": "Нажмите на окно мода, чтобы выбрать, как его показывать. Esc или правый клик — выход."
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "Нажмите на окно мода, чтобы выбрать, как его показывать. Esc или правый клик — выход.",
+ "Translation is off: your choice is saved and shows once you turn it on.": "Перевод выключен: ваш выбор сохранён и появится, как только вы его включите.",
+ "Saved. Turn translation on to see it.": "Сохранено. Включите перевод, чтобы увидеть."
 }

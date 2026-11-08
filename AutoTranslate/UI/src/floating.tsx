@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { bindValue, trigger, useValue } from "cs2/api";
 import mod from "mod.json";
-import { collectTexts } from "hook";
+import { collectTexts, panelTitle } from "hook";
 import de from "../../i18n/de.json";
 import es from "../../i18n/es.json";
 import fr from "../../i18n/fr.json";
@@ -127,6 +127,8 @@ const buildText = (tr: Tr) => ({
     resOriginal: (l: string) => fill(tr("Original text: {label}"), { label: l }),
     resLanguage: (l: string, n: string) => `${l} → ${n}`,
     resNone: tr("This is a game window, or it has nothing to translate."),
+    offNote: tr("Translation is off: your choice is saved and shows once you turn it on."),
+    offSaved: tr("Saved. Turn translation on to see it."),
     resError: tr("Could not save exclusions.json (see the log)."),
     banner: tr("Click a mod window to choose how it is shown. Esc or right click to leave."),
 });
@@ -176,6 +178,8 @@ const TEXT = {
     resOriginal: (l: string) => `بدون ترجمة: ${l}`,
     resLanguage: (l: string, n: string) => `${l} ← ${n}`,
     resNone: "هذه نافذة من اللعبة نفسها، أو ما فيها نص يُترجم.",
+    offNote: "الترجمة متوقفة: اختيارك ينحفظ ويظهر أول ما تشغّلها.",
+    offSaved: "انحفظ. شغّل الترجمة عشان يظهر.",
     resError: "تعذّر حفظ ملف الاستثناءات (راجع السجل).",
     banner: "اضغط على نافذة أي مود واختر كيف تظهر. للخروج: Esc أو زر الماوس الأيمن.",
   },
@@ -351,6 +355,8 @@ export const FloatingButton = () => {
   const lastClick = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const lastRect = useRef<Rect | null>(null);
   const chooserRef = useRef<Chooser | null>(null);
+  const enabledRef = useRef<boolean>(false);
+  enabledRef.current = controls.enabled;
   chooserRef.current = chooser;
 
   // The answer present when the component mounted is an old one: only newer answers are shown.
@@ -375,7 +381,8 @@ export const FloatingButton = () => {
     }
     if (result.action === "applied") {
       const choice = result.choice || "default";
-      showToast(choice === "default" ? text.resDefault(label) : choice === "original" ? text.resOriginal(label) : text.resLanguage(label, result.languageName || choice));
+      const done = choice === "default" ? text.resDefault(label) : choice === "original" ? text.resOriginal(label) : text.resLanguage(label, result.languageName || choice);
+      showToast(enabledRef.current || choice === "original" ? done : done + " — " + text.offSaved);
       return;
     }
     showToast(result.action === "none" ? text.resNone : text.resError);
@@ -424,7 +431,7 @@ export const FloatingButton = () => {
       const r = panel.getBoundingClientRect();
       lastRect.current = { left: r.left, top: r.top, width: r.width, height: r.height };
       const texts = collectTexts(panel, PICK_LIMIT);
-      trigger(group, "pick", JSON.stringify({ texts, label: texts.length > 0 ? texts[0] : "" }));
+      trigger(group, "pick", JSON.stringify({ texts, label: panelTitle(panel) || (texts.length > 0 ? texts[0] : "") }));
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.keyCode === 27) {
@@ -571,6 +578,12 @@ export const FloatingButton = () => {
           <div style={{ ...S.bold, marginBottom: "6rem" }}>{chooser.label}</div>
           <div style={S.option(chooser.current === "default")} onClick={() => choose("default")}>{text.optDefault(controls.targetName)}</div>
           <div style={S.option(chooser.current === "original")} onClick={() => choose("original")}>{text.optOriginal}</div>
+          {!controls.enabled && (
+            <div style={{ ...S.row, marginTop: "6rem", marginBottom: "4rem" }}>
+              <div style={{ ...S.small, flex: 1, marginTop: "0rem", color: "#ffb347" }}>{text.offNote}</div>
+              <div style={S.btn(true)} onClick={() => trigger(group, "toggleEnabled")}>{text.turnOn}</div>
+            </div>
+          )}
           <div style={{ ...S.small, marginTop: "8rem" }}>{text.optOther}</div>
           <div style={S.list(170)}>
             {otherLanguages.map((l) => (

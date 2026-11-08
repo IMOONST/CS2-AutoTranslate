@@ -135,5 +135,7 @@
  "Original text: {label}": "원문: {label}",
  "This is a game window, or it has nothing to translate.": "게임 창이거나 번역할 내용이 없습니다.",
  "Could not save exclusions.json (see the log).": "exclusions.json을 저장할 수 없습니다 (로그 참조).",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": "모드 창을 클릭하여 표시 방식을 선택하세요. Esc 또는 마우스 오른쪽 버튼을 누르면 나갑니다."
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "모드 창을 클릭하여 표시 방식을 선택하세요. Esc 또는 마우스 오른쪽 버튼을 누르면 나갑니다.",
+ "Translation is off: your choice is saved and shows once you turn it on.": "번역이 꺼져 있습니다. 선택은 저장되며 번역을 켜면 적용됩니다.",
+ "Saved. Turn translation on to see it.": "저장했습니다. 보려면 번역을 켜세요."
 }

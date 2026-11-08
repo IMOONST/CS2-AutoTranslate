@@ -135,5 +135,7 @@
  "Original text: {label}": "原文: {label}",
  "This is a game window, or it has nothing to translate.": "これはゲームのウィンドウか、翻訳するものがありません。",
  "Could not save exclusions.json (see the log).": "exclusions.json を保存できませんでした（ログを参照）。",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": "MOD のウィンドウをクリックして表示方法を選択します。Esc または右クリックで終了。"
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "MOD のウィンドウをクリックして表示方法を選択します。Esc または右クリックで終了。",
+ "Translation is off: your choice is saved and shows once you turn it on.": "翻訳はオフです。選択は保存され、オンにすると反映されます。",
+ "Saved. Turn translation on to see it.": "保存しました。表示するには翻訳をオンにしてください。"
 }

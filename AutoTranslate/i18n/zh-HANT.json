@@ -135,5 +135,7 @@
  "Original text: {label}": "原文：{label}",
  "This is a game window, or it has nothing to translate.": "這是遊戲視窗，或沒有可翻譯的內容。",
  "Could not save exclusions.json (see the log).": "無法儲存 exclusions.json（請查看記錄檔）。",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": "點擊模組視窗以選擇其顯示方式。按 Esc 或點擊右鍵離開。"
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "點擊模組視窗以選擇其顯示方式。按 Esc 或點擊右鍵離開。",
+ "Translation is off: your choice is saved and shows once you turn it on.": "翻譯已關閉：你的選擇已儲存，開啟翻譯後即會顯示。",
+ "Saved. Turn translation on to see it.": "已儲存。開啟翻譯即可看到。"
 }

@@ -615,6 +615,31 @@ export const startHook = () => {
  * The texts an element shows, as their originals: a text we translated gives its text before translation (so C# can
  * recognise the mod and save texts that stay valid). Text and title / placeholder attributes; at most `limit`.
  */
+/**
+ * The first visible text of a window in document order (its title in practice), original text; "" when none.
+ * Attributes (tooltips such as "Drag to move") are skipped: they make poor names.
+ */
+export const panelTitle = (root: Element): string => {
+  const stack: Node[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop() as Node;
+    if (node.nodeType === TEXT_NODE) {
+      const text = node as Text;
+      const state = textState.get(text);
+      const value = ((state && text.nodeValue === state.shown ? state.orig : text.nodeValue) || "").trim();
+      if (value.length >= 2 && value.length <= 60 && /[A-Za-zÀ-￿]/.test(value)) return value;
+      continue;
+    }
+    if (node.nodeType !== ELEMENT_NODE) continue;
+    const el = node as Element;
+    const tag = tagOf(el);
+    if (SKIP_ALL[tag] || SKIP_TEXT[tag]) continue;
+    const children = el.childNodes;
+    for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
+  }
+  return "";
+};
+
 export const collectTexts = (root: Element, limit: number): string[] => {
   const out: string[] = [];
   const seen = new Set<string>();

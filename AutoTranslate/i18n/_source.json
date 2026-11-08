@@ -135,5 +135,7 @@
  "Original text: {label}": "",
  "This is a game window, or it has nothing to translate.": "",
  "Could not save exclusions.json (see the log).": "",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": ""
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "",
+ "Translation is off: your choice is saved and shows once you turn it on.": "الترجمة متوقفة: اختيارك ينحفظ ويظهر أول ما تشغّلها.",
+ "Saved. Turn translation on to see it.": "انحفظ. شغّل الترجمة عشان يظهر."
 }

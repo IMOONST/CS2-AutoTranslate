@@ -135,5 +135,7 @@
  "Original text: {label}": "Texto original: {label}",
  "This is a game window, or it has nothing to translate.": "Esta es una ventana del juego o no tiene nada que traducir.",
  "Could not save exclusions.json (see the log).": "No se ha podido guardar exclusions.json (ver el registro).",
- "Click a mod window to choose how it is shown. Esc or right click to leave.": "Haz clic en la ventana de un mod para elegir cómo se muestra. Esc o clic derecho para salir."
+ "Click a mod window to choose how it is shown. Esc or right click to leave.": "Haz clic en la ventana de un mod para elegir cómo se muestra. Esc o clic derecho para salir.",
+ "Translation is off: your choice is saved and shows once you turn it on.": "La traducción está desactivada: tu elección se guarda y se verá en cuanto la actives.",
+ "Saved. Turn translation on to see it.": "Guardado. Activa la traducción para verlo."
 }
