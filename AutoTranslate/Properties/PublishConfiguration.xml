@@ -3,7 +3,7 @@
 	<!--Assigned on the first publish (2026-11-08).-->
 	<ModId Value="166812" />
 	<DisplayName Value="Auto Translate: Any Mod" />
-	<ShortDescription Value="Translates the mods you pick into your language: click a mod's window or options page and choose. 43 languages, offline memory, interface in 13 languages." />
+	<ShortDescription Value="Translates the mods you pick into your language: click a mod's window or options page and choose. 43 languages, translation memory, interface in 13 languages." />
 	<LongDescription>
 # Auto Translate: Any Mod
 
@@ -19,7 +19,7 @@ Install it, start the game, and the mods you use appear in your language. Not on
 - **Its own interface in 13 languages** (the game's twelve plus Arabic): it follows the game's language, your Windows language, or the one you pick.
 - **Picks the language by itself**: the game's language, otherwise your Windows language, or choose from **43 languages**, including languages the game does not offer (Arabic, Hindi, Indonesian, Vietnamese, Ukrainian and more).
 - **Translation engines**: Free automatic (default: two free Google endpoints, switching when one refuses), Google, DeepL (your key), LibreTranslate (your own or a public server), Microsoft Translator (your key).
-- **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Known texts appear instantly, even offline, and no text is ever sent for translation twice.
+- **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Texts translated once appear instantly next time without asking the translator again, and no text is ever sent for translation twice.
 - **Floating button while you play**: drag it anywhere on the screen. Click it to:
   - turn translation on or off, and choose the language: automatic, the game's, Windows', or any of the 43;
   - see how many texts are translated and how many are waiting;
@@ -63,9 +63,9 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - **واجهته نفسها بـ 13 لغة** (لغات اللعبة الـ12 والعربية): تتبع لغة اللعبة، أو لغة ويندوز، أو اللي تختارها.
 - **يختار اللغة بنفسه**: لغة اللعبة، وإلا لغة ويندوز، أو تختار من **43 لغة** منها لغات ما توفرها اللعبة مثل العربية.
 - **محركات الترجمة**: مجاني تلقائي (الافتراضي: خدمتان مجانيتان من Google يتنقّل بينهما)، Google، DeepL (بمفتاحك)، LibreTranslate، Microsoft Translator (بمفتاحك).
-- **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النصوص المعروفة تظهر فوراً حتى بدون إنترنت، وما يُرسل أي نص للترجمة مرتين.
+- **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النص اللي انترجم مرة يطلع فوراً المرة الجاية بدون ما يرجع للمترجم، وما يُرسل أي نص للترجمة مرتين.
 - **أيقونة عائمة أثناء اللعب**: تسحبها لأي مكان، وتضغط عليها عشان:
-  - تشغّل الترجمة أو توقفها، وتختار اللغة: تلقائي، أو لغة اللعبة، أو لغة ويندوز، أو أي لغة من الـ 44؛
+  - تشغّل الترجمة أو توقفها، وتختار اللغة: تلقائي، أو لغة اللعبة، أو لغة ويندوز، أو أي لغة من الـ 43؛
   - تشوف كم نص تترجم وكم ينتظر؛
   - تشغّل **وضع التحكم بالضغط**: تضغط على نافذة أي مود وتختار كيف يظهر: بالترجمة العامة، أو بنصه الأصلي، أو **مترجم للغة ثانية** (مثلاً مود بالإنجليزي ومود بالفرنسي والباقي بلغتك). اختياراتك تنحفظ وتظهر في قائمة الأيقونة، وجنب كل واحد زر لإرجاعه.
 - **الاستثناءات**:
@@ -110,12 +110,12 @@ With an online engine, **only the texts to be translated** are sent to the servi
 1.0.0 - First release / الإصدار الأول
 
 - Automatic translation of other mods and of any untranslated text on screen, into 43 languages, with five engine choices.
-- Permanent offline translation memory, master on/off switch, word and whole-mod exclusions.
+- Permanent translation memory (a text is never translated twice), master on/off switch, word and whole-mod exclusions.
 - Floating button: language choice, and a click mode to show each mod translated, original, or in another language.
 - Override files, export of untranslated texts, and a status panel.
 
 - ترجمة تلقائية للمودات الأخرى ولأي نص غير مترجم على الشاشة إلى 43 لغة، بخمسة خيارات للمحرك.
-- ذاكرة ترجمة دائمة تعمل دون إنترنت، زر تشغيل/إيقاف، استثناء كلمات ومودات كاملة.
+- ذاكرة ترجمة دائمة (النص ما ينترجم مرتين)، زر تشغيل/إيقاف، استثناء كلمات ومودات كاملة.
 - أيقونة عائمة: اختيار اللغة، ووضع التحكم بالضغط لعرض كل مود مترجم أو بالأصل أو بلغة ثانية.
 - ملفات ترجمة يدوية، تصدير النصوص غير المترجمة، ولوحة حالة.
 	</ChangeLog>

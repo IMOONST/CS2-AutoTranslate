@@ -1,6 +1,6 @@
 # Auto Translate: Any Mod
 
-A Cities: Skylines II code mod that translates your mods, and any untranslated text on screen, into your language automatically. 43 languages, a permanent offline translation memory, exclusions, and a floating button to switch translation off or on per mod window.
+A Cities: Skylines II code mod that translates your mods, and any untranslated text on screen, into your language automatically. 43 languages, a permanent translation memory (a text is never translated twice), exclusions, and a floating button to switch translation off or on per mod window.
 
 [العربية](#مترجم-المودات-التلقائي)
 
@@ -48,7 +48,7 @@ MIT, see [LICENSE](LICENSE).
 
 # مترجم المودات التلقائي
 
-مود للعبة Cities: Skylines II يترجم المودات، وأي نص غير مترجم على الشاشة، إلى لغتك تلقائياً. 43 لغة، وذاكرة ترجمة دائمة تعمل بدون إنترنت، واستثناءات، وأيقونة عائمة توقف الترجمة أو تشغّلها لكل نافذة مود.
+مود للعبة Cities: Skylines II يترجم المودات، وأي نص غير مترجم على الشاشة، إلى لغتك تلقائياً. 43 لغة، وذاكرة ترجمة دائمة (النص ما ينترجم مرتين)، واستثناءات، وأيقونة عائمة توقف الترجمة أو تشغّلها لكل نافذة مود.
 
 ## الميزات
 - يترجم نصوص المودات ونوافذها: افتراضياً بس المودات اللي تختارها (وضع الضغط على نافذة المود أو صفحة إعداداته)، أو كل مود ما فيه لغتك («وش يترجم»: كل شيء).
