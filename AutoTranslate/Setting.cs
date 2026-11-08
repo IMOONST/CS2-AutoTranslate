@@ -663,8 +663,8 @@ namespace AutoTranslate
     }
 
     /// <summary>
-    /// Registers the options page text and keeps it in the page language: Arabic when the game is in Arabic, the
-    /// translation target is Arabic, or Windows is in Arabic; English otherwise.
+    /// Registers the options page text and keeps it in the page language: Arabic when the game is in Arabic or
+    /// translation is running into Arabic; English otherwise.
     /// </summary>
     internal static class OptionsLocalization
     {
@@ -684,9 +684,10 @@ namespace AutoTranslate
             {
                 // No active dictionary yet.
             }
+            // The game's language decides; the one exception is translation running into Arabic (the game has no
+            // Arabic of its own). Windows' language alone no longer turns the page Arabic.
             var target = TranslationService.Instance?.TargetLanguage;
-            if (!string.IsNullOrEmpty(target)) return TextRules.SameLanguage(target, "ar");
-            return TextRules.SameLanguage(TargetResolver.SystemLanguage, "ar");
+            return !string.IsNullOrEmpty(target) && TextRules.SameLanguage(target, "ar");
         }
 
         public static void Register(Setting setting)
