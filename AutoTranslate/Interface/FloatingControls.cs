@@ -16,7 +16,7 @@ namespace AutoTranslate.Interface
     /// translated, waiting, entries: [{ id, label, kind, language, languageName }] }</c>. Entries are every mod or window
     /// with its own setting, and the mods excluded in exclusions.json or the options field.</item>
     /// <item>value <c>languages</c>: JSON <c>[{ code, name }]</c>, every language that can be chosen (fixed).</item>
-    /// <item>trigger <c>toggleEnabled</c>; <c>setTargetMode</c>(string: Auto, GameLanguage, SystemLanguage, Manual);
+    /// <item>trigger <c>toggleEnabled</c>; <c>setScope</c>(string: ChosenOnly, Everything); <c>setTargetMode</c>(string: Auto, GameLanguage, SystemLanguage, Manual);
     /// <c>setManualLanguage</c>(string code); <c>moveButton</c>(string JSON { x, y }); <c>hideButton</c>.</item>
     /// <item>trigger <c>pick</c>(string JSON { texts, label }): the texts (originals) of the window clicked in click mode.
     /// Answered in <c>pickResult</c> with <c>{ nonce, action: "choose", token, label, kind, current }</c> (current:
@@ -27,7 +27,7 @@ namespace AutoTranslate.Interface
     /// </list>
     /// A window is matched to its mod by its texts (<see cref="AutoTranslateSystem.FindOwners"/>): a recognised mod is
     /// set as a whole (its localization and its windows); a window of no known mod is set by its own texts. Saved in
-    /// exclusions.json ("panels"; "language" "" means original), so it lasts across games.
+    /// exclusions.json ("panels"; "language" "" means original, "*" the main language), so it lasts across games.
     /// </summary>
     public partial class InterfaceTextSystem
     {
@@ -57,6 +57,7 @@ namespace AutoTranslate.Interface
             AddBinding(new ValueBinding<string>(Group, "languages", BuildLanguages()));
             AddBinding(new TriggerBinding(Group, "toggleEnabled", OnToggleEnabled));
             AddBinding(new TriggerBinding<string>(Group, "setTargetMode", OnSetTargetMode));
+            AddBinding(new TriggerBinding<string>(Group, "setScope", OnSetScope));
             AddBinding(new TriggerBinding<string>(Group, "setManualLanguage", OnSetManualLanguage));
             AddBinding(new TriggerBinding<string>(Group, "pick", OnPick));
             AddBinding(new TriggerBinding<string>(Group, "applyPick", OnApplyPick));
@@ -104,7 +105,9 @@ namespace AutoTranslate.Interface
                     ["label"] = panel.Label,
                     ["kind"] = string.IsNullOrEmpty(panel.Mod) ? "panel" : "mod",
                     ["language"] = panel.Language ?? "",
-                    ["languageName"] = string.IsNullOrEmpty(panel.Language) ? "" : LanguageCodes.DisplayName(panel.Language),
+                    ["languageName"] = string.IsNullOrEmpty(panel.Language) ? ""
+                        : panel.Language == Exclusions.MainLanguage ? (string.IsNullOrEmpty(m_Target) ? "—" : LanguageCodes.DisplayName(m_Target))
+                        : LanguageCodes.DisplayName(panel.Language),
                 });
                 if (!string.IsNullOrEmpty(panel.Mod)) listed.Add(Exclusions.ModKey(panel.Mod));
             }
@@ -129,6 +132,7 @@ namespace AutoTranslate.Interface
                 ["enabled"] = settings != null && settings.Enabled,
                 ["interfaces"] = settings != null && settings.TranslateInterfaces,
                 ["mode"] = settings != null ? settings.TargetMode.ToString() : "Auto",
+                ["scope"] = settings != null ? settings.Scope.ToString() : "ChosenOnly",
                 ["manual"] = settings?.ManualLanguage ?? "",
                 ["target"] = m_Target ?? "",
                 ["targetName"] = string.IsNullOrEmpty(m_Target) ? "" : LanguageCodes.DisplayName(m_Target),
@@ -146,6 +150,17 @@ namespace AutoTranslate.Interface
             var settings = Mod.Settings;
             if (settings == null) return;
             settings.Enabled = !settings.Enabled;
+            settings.ApplyAndSave();
+            UpdateControls(force: true);
+        }
+
+        private void OnSetScope(string scope)
+        {
+            var settings = Mod.Settings;
+            if (settings == null || string.IsNullOrEmpty(scope)) return;
+            if (!Enum.TryParse(scope, out Setting.TranslateScope value) || !Enum.IsDefined(typeof(Setting.TranslateScope), value)) return;
+            if (settings.Scope == value) return;
+            settings.Scope = value;
             settings.ApplyAndSave();
             UpdateControls(force: true);
         }
@@ -324,7 +339,9 @@ namespace AutoTranslate.Interface
                 if (seen.Add(value)) pending.Texts.Add(value);
             }
 
-            string current = "default";
+            // Nothing saved: translated with everything else, or (only the mods I choose) left original.
+            bool chosenOnly = m_Service != null && m_Service.ChosenOnly;
+            string current = chosenOnly ? "original" : "default";
             if (owner != null)
             {
                 var ownerKey = Exclusions.ModKey(owner.AssemblyName);
@@ -333,7 +350,7 @@ namespace AutoTranslate.Interface
                     if (!string.IsNullOrEmpty(panel.Mod) && Exclusions.ModKey(panel.Mod) == ownerKey)
                     {
                         pending.Panel = panel;
-                        current = string.IsNullOrEmpty(panel.Language) ? "original" : panel.Language;
+                        current = CurrentOf(panel.Language);
                         break;
                     }
                 }
@@ -345,7 +362,7 @@ namespace AutoTranslate.Interface
                 pending.Panel = BestPanel(exclusions, texts, english);
                 if (pending.Panel != null)
                 {
-                    current = string.IsNullOrEmpty(pending.Panel.Language) ? "original" : pending.Panel.Language;
+                    current = CurrentOf(pending.Panel.Language);
                     pending.Label = pending.Panel.Label;
                 }
                 else if (pending.Texts.Count == 0)
@@ -429,6 +446,10 @@ namespace AutoTranslate.Interface
             UpdateControls(force: true);
         }
 
+        /// <summary>A saved language as a choice: "original" (""), "default" (the main language, "*") or the code.</summary>
+        private static string CurrentOf(string language) =>
+            string.IsNullOrEmpty(language) ? "original" : language == Exclusions.MainLanguage ? "default" : language;
+
         private static string ChoiceName(string choice) =>
             choice == "default" || choice == "original" ? "" : LanguageCodes.DisplayName(choice);
 
@@ -463,14 +484,17 @@ namespace AutoTranslate.Interface
                 ok &= Exclusions.RemovePanel(pending.Panel.Id);
             }
 
-            if (choice == "default") return ok;
+            // What needs no entry: the main translation when everything is translated, the original when only the
+            // chosen mods are.
+            bool chosenOnly = m_Service != null && m_Service.ChosenOnly;
+            if (choice == (chosenOnly ? "original" : "default")) return ok;
 
             var entry = new PanelEntry
             {
                 Id = DateTime.UtcNow.Ticks.ToString("x"),
                 Label = pending.Label,
                 Mod = pending.Owner?.AssemblyName ?? "",
-                Language = choice == "original" ? "" : choice,
+                Language = choice == "original" ? "" : choice == "default" ? Exclusions.MainLanguage : choice,
             };
             entry.Texts.AddRange(pending.Texts);
             if (entry.Texts.Count == 0 && entry.Mod.Length == 0) return ok;

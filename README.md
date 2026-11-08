@@ -5,7 +5,8 @@ A Cities: Skylines II code mod that translates your mods, and any untranslated t
 [العربية](#مترجم-المودات-التلقائي)
 
 ## Features
-- Translates other mods' localization (every installed mod without your language) and the text mod panels draw directly.
+- Translates other mods' localization and the text their panels draw directly: by default only the mods you pick (click mode on a mod's window or options page), or every mod without your language ("What to translate": Everything).
+- Its own interface (options page and floating button) in 13 languages: Auto (the game's), Windows', or a chosen one. Texts live in `AutoTranslate/i18n/<code>.json`, keyed by the English text.
 - Translates any English text on screen that has no translation; the game's own translated texts are never touched.
 - Target language: the game's, otherwise Windows', or one of 43 chosen manually.
 - Engines: Free automatic (two free Google endpoints with failover and back-off), Google, DeepL, LibreTranslate, Microsoft Translator.
@@ -50,7 +51,8 @@ MIT, see [LICENSE](LICENSE).
 مود للعبة Cities: Skylines II يترجم المودات، وأي نص غير مترجم على الشاشة، إلى لغتك تلقائياً. 43 لغة، وذاكرة ترجمة دائمة تعمل بدون إنترنت، واستثناءات، وأيقونة عائمة توقف الترجمة أو تشغّلها لكل نافذة مود.
 
 ## الميزات
-- يترجم نصوص المودات اللي ما فيها لغتك، والنصوص اللي تعرضها نوافذها مباشرة.
+- يترجم نصوص المودات ونوافذها: افتراضياً بس المودات اللي تختارها (وضع الضغط على نافذة المود أو صفحة إعداداته)، أو كل مود ما فيه لغتك («وش يترجم»: كل شيء).
+- واجهته نفسها (صفحة الإعدادات والأيقونة) بـ 13 لغة: تلقائي حسب اللعبة، أو ويندوز، أو اختيار.
 - يترجم أي نص إنجليزي على الشاشة ما له ترجمة، وما يلمس ترجمات اللعبة نفسها.
 - اللغة: لغة اللعبة، وإلا لغة ويندوز، أو تختار من 43 لغة.
 - محركات: مجاني تلقائي، Google، DeepL، LibreTranslate، Microsoft.

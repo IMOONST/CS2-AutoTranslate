@@ -33,6 +33,8 @@ namespace AutoTranslate.Core
 
         /// <summary>The language the player chose for this mod (floating button), or null for the main target.</summary>
         public string Language;
+        /// <summary>The player picked this mod (a language or the main one) with the click mode.</summary>
+        public bool Chosen;
     }
 
     /// <summary>

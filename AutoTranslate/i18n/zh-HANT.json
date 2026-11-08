@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "無法儲存 exclusions.json（請查看記錄檔）。",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "點擊模組視窗以選擇其顯示方式。按 Esc 或點擊右鍵離開。",
  "Translation is off: your choice is saved and shows once you turn it on.": "翻譯已關閉：你的選擇已儲存，開啟翻譯後即會顯示。",
- "Saved. Turn translation on to see it.": "已儲存。開啟翻譯即可看到。"
+ "Saved. Turn translation on to see it.": "已儲存。開啟翻譯即可看到。",
+ "What to translate": "翻譯範圍",
+ "Only the mods I choose": "僅我選擇的模組",
+ "Everything": "全部",
+ "Use the click mode on a mod's window or options page to choose it.": "在點擊模式下點擊模組的視窗或選項頁面即可選擇它。",
+ "Translate ({name})": "翻譯（{name}）",
+ "Translate": "翻譯",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "僅我選擇的模組：在用懸浮按鈕的點擊模式選擇模組之前不會翻譯任何內容（點擊它的視窗或選項頁面並選擇語言）；選擇後，該模組的所有文字（視窗和選項）都會被翻譯。全部：翻譯所有不含你的語言的模組（你選擇的模組仍可保留原文或設為其他語言）。"
 }

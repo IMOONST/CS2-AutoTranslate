@@ -48,6 +48,7 @@ interface Controls {
   enabled: boolean;
   interfaces: boolean;
   mode: "Auto" | "GameLanguage" | "SystemLanguage" | "Manual";
+  scope: "ChosenOnly" | "Everything";
   manual: string;
   target: string;
   targetName: string;
@@ -87,7 +88,7 @@ const parse = <T,>(json: string, fallback: T): T => {
 };
 
 const DEFAULT_CONTROLS: Controls = {
-  arabic: false, lang: "en", show: false, x: -1, y: -1, enabled: false, interfaces: false, mode: "Auto", manual: "", target: "",
+  arabic: false, lang: "en", scope: "ChosenOnly", show: false, x: -1, y: -1, enabled: false, interfaces: false, mode: "Auto", manual: "", target: "",
   targetName: "", translated: 0, waiting: 0, entries: [],
 };
 
@@ -103,6 +104,10 @@ const buildText = (tr: Tr) => ({
     turnOff: tr("Turn off"),
     turnOn: tr("Turn on"),
     language: tr("Translate into"),
+    scopeTitle: tr("What to translate"),
+    scopes: { ChosenOnly: tr("Only the mods I choose"), Everything: tr("Everything") },
+    scopeHint: tr("Use the click mode on a mod's window or options page to choose it."),
+    optTranslate: (name: string) => (name ? fill(tr("Translate ({name})"), { name }) : tr("Translate")),
     modes: { Auto: tr("Automatic"), GameLanguage: tr("Game language"), SystemLanguage: tr("Windows language"), Manual: tr("Choose") },
     current: (name: string) => (name ? fill(tr("Now: {name}"), { name }) : tr("No target language (the game and Windows are in English).")),
     pick: tr("Click mode"),
@@ -154,6 +159,10 @@ const TEXT = {
     turnOff: "إيقاف",
     turnOn: "تشغيل",
     language: "الترجمة إلى",
+    scopeTitle: "وش يترجم",
+    scopes: { ChosenOnly: "بس المودات اللي أختارها", Everything: "كل شيء" },
+    scopeHint: "اضغط بوضع التحكم على نافذة المود أو صفحة إعداداته عشان تختاره.",
+    optTranslate: (name: string) => (name ? `ترجمه (${name})` : "ترجمه"),
     modes: { Auto: "تلقائي", GameLanguage: "لغة اللعبة", SystemLanguage: "لغة ويندوز", Manual: "اختيار" },
     current: (name: string) => (name ? `الحالية: ${name}` : "لا توجد لغة هدف (اللعبة وويندوز بالإنجليزية)."),
     pick: "وضع التحكم بالضغط",
@@ -189,6 +198,7 @@ const BUTTON_SIZE = 46;
 const DRAG_THRESHOLD = 4;
 const PICK_LIMIT = 400;
 const MODES: Controls["mode"][] = ["Auto", "GameLanguage", "SystemLanguage", "Manual"];
+const SCOPES: Controls["scope"][] = ["ChosenOnly", "Everything"];
 
 // ---------------------------------------------------------------------------------------------------------------------
 // DOM helpers (Gameface: no closest)
@@ -576,7 +586,7 @@ export const FloatingButton = () => {
             <div style={S.close} title={text.close} onClick={() => setChooser(null)}>×</div>
           </div>
           <div style={{ ...S.bold, marginBottom: "6rem" }}>{chooser.label}</div>
-          <div style={S.option(chooser.current === "default")} onClick={() => choose("default")}>{text.optDefault(controls.targetName)}</div>
+          <div style={S.option(chooser.current === "default")} onClick={() => choose("default")}>{controls.scope === "ChosenOnly" ? text.optTranslate(controls.targetName) : text.optDefault(controls.targetName)}</div>
           <div style={S.option(chooser.current === "original")} onClick={() => choose("original")}>{text.optOriginal}</div>
           {!controls.enabled && (
             <div style={{ ...S.row, marginTop: "6rem", marginBottom: "4rem" }}>
@@ -617,6 +627,16 @@ export const FloatingButton = () => {
               </div>
             </div>
             {controls.enabled && controls.target !== "" && <div style={S.small}>{text.status(controls.translated, controls.waiting)}</div>}
+
+            <div style={S.section}>
+              <div style={S.bold}>{text.scopeTitle}</div>
+              <div style={S.wrapRow}>
+                {SCOPES.map((sc) => (
+                  <div key={sc} style={S.chip(controls.scope === sc)} onClick={() => trigger(group, "setScope", sc)}>{text.scopes[sc]}</div>
+                ))}
+              </div>
+              {controls.scope === "ChosenOnly" && <div style={S.small}>{text.scopeHint}</div>}
+            </div>
 
             <div style={S.section}>
               <div style={S.bold}>{text.language}</div>

@@ -139,6 +139,8 @@ namespace AutoTranslate.Core
             public ModEntry Mod;
             /// <summary>A source of an excluded mod has this key: it is never translated.</summary>
             public bool Excluded;
+            /// <summary>"Only the mods I choose" and the key's mod was not chosen: left as it is.</summary>
+            public bool NotChosen;
         }
 
         /// <summary>One localization source, read once per scan.</summary>
@@ -830,10 +832,14 @@ namespace AutoTranslate.Core
                     break;
                 }
             }
+            bool chosenOnly = m_Service.ChosenOnly;
             foreach (var mod in catalog.Used)
             {
                 mod.Excluded = exclusions.IsExcludedMod(mod.AssemblyName, mod.DisplayName, mod.Title);
                 var language = mod.Excluded ? null : exclusions.LanguageForMod(mod.AssemblyName, mod.DisplayName, mod.Title);
+                // Chosen: a language, or the main one ("*"). An entry with no language means "original" (an exclusion).
+                mod.Chosen = !string.IsNullOrEmpty(language);
+                if (language == Exclusions.MainLanguage) language = null;
                 mod.Language = string.IsNullOrEmpty(language) || TextRules.SameLanguage(language, target) ? null : language;
             }
 
@@ -867,8 +873,9 @@ namespace AutoTranslate.Core
                         info = new KeyInfo();
                         m_Keys[pair.Key] = info;
                     }
-                    if (mod.Language != null && pair.Value.Length > 0 && !forTarget)
-                        languageValues[TextRules.HasOuterWhitespace(pair.Value) ? pair.Value.Trim() : pair.Value] = mod.Language;
+                    // The texts of chosen mods, for the interface hook: in their language, or "*" for the main one.
+                    if ((mod.Language != null || (chosenOnly && mod.Chosen && !mod.Excluded)) && pair.Value.Length > 0 && !forTarget)
+                        languageValues[TextRules.HasOuterWhitespace(pair.Value) ? pair.Value.Trim() : pair.Value] = mod.Language ?? Exclusions.MainLanguage;
                     if (mod.Excluded)
                     {
                         info.Excluded = true;
@@ -892,6 +899,7 @@ namespace AutoTranslate.Core
 
             foreach (var info in m_Keys.Values)
             {
+                info.NotChosen = chosenOnly && !info.Excluded && (info.Mod == null || !info.Mod.Chosen);
                 // A "translation" that equals the English text was copied, not translated.
                 if (info.TargetValue != null && info.EnglishRank < 4 && string.Equals(info.TargetValue, info.English, StringComparison.Ordinal))
                     info.TargetValue = null;
@@ -936,7 +944,7 @@ namespace AutoTranslate.Core
                 var info = pair.Value;
                 // Excluded mods: never touched (no override, no cache, no engine). A key no longer in m_Desired is taken
                 // out of the game's localization by the next refresh (the locale is reloaded without it).
-                if (info.Excluded) continue;
+                if (info.Excluded || info.NotChosen) continue;
                 bool counts = !string.IsNullOrWhiteSpace(info.English) && TextRules.HasLetters(info.English);
                 if (counts) found++;
 
@@ -1014,7 +1022,7 @@ namespace AutoTranslate.Core
             foreach (var pair in overrides.Keys)
             {
                 if (m_Desired.ContainsKey(pair.Key)) continue;
-                if (m_Keys.TryGetValue(pair.Key, out var info) && info.Excluded) continue;
+                if (m_Keys.TryGetValue(pair.Key, out var info) && (info.Excluded || info.NotChosen)) continue;
                 m_Desired[pair.Key] = pair.Value;
             }
 

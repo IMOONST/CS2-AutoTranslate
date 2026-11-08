@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "",
  "Translation is off: your choice is saved and shows once you turn it on.": "الترجمة متوقفة: اختيارك ينحفظ ويظهر أول ما تشغّلها.",
- "Saved. Turn translation on to see it.": "انحفظ. شغّل الترجمة عشان يظهر."
+ "Saved. Turn translation on to see it.": "انحفظ. شغّل الترجمة عشان يظهر.",
+ "What to translate": "وش يترجم",
+ "Only the mods I choose": "بس المودات اللي أختارها",
+ "Everything": "كل شيء",
+ "Use the click mode on a mod's window or options page to choose it.": "اضغط بوضع التحكم على نافذة المود أو صفحة إعداداته عشان تختاره.",
+ "Translate ({name})": "ترجمه ({name})",
+ "Translate": "ترجمه",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "بس المودات اللي أختارها: ما يُترجم شيء حتى تختار مود بوضع التحكم بالضغط في الأيقونة العائمة (اضغط على نافذته أو صفحة إعداداته واختر لغة)، وبعدها تُترجم كل نصوص هذا المود: نوافذه وإعداداته. كل شيء: يُترجم كل مود ما فيه لغتك (والمودات اللي تختارها تقدر تبقيها بالأصل أو بلغة ثانية)."
 }

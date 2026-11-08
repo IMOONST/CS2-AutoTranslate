@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "无法保存 exclusions.json（请查看日志）。",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "点击模组窗口以选择其显示方式。按 Esc 或右键退出。",
  "Translation is off: your choice is saved and shows once you turn it on.": "翻译已关闭：你的选择已保存，开启翻译后即会显示。",
- "Saved. Turn translation on to see it.": "已保存。开启翻译即可看到。"
+ "Saved. Turn translation on to see it.": "已保存。开启翻译即可看到。",
+ "What to translate": "翻译范围",
+ "Only the mods I choose": "仅我选择的模组",
+ "Everything": "全部",
+ "Use the click mode on a mod's window or options page to choose it.": "在点击模式下点击模组的窗口或选项页面即可选择它。",
+ "Translate ({name})": "翻译（{name}）",
+ "Translate": "翻译",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "仅我选择的模组：在用悬浮按钮的点击模式选择模组之前不会翻译任何内容（点击它的窗口或选项页面并选择语言）；选择后，该模组的所有文本（窗口和选项）都会被翻译。全部：翻译所有不含你的语言的模组（你选择的模组仍可保留原文或设为其他语言）。"
 }

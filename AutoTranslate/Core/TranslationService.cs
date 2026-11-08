@@ -568,6 +568,9 @@ namespace AutoTranslate.Core
         /// <summary>A text we put on screen in another language than the main target: the interface hook leaves it.</summary>
         internal bool IsForeignText(string text) => !string.IsNullOrEmpty(text) && m_ForeignTexts.Count > 0 && m_ForeignTexts.Contains(text.Trim());
 
+        /// <summary>Only the mods and windows the player picked are translated (see <see cref="Exclusions.MainLanguage"/>).</summary>
+        public bool ChosenOnly => m_Config != null && m_Config.ChosenOnly;
+
         internal void SetModLanguageTexts(Dictionary<string, string> texts) => m_ModLanguageTexts = texts ?? new Dictionary<string, string>(StringComparer.Ordinal);
 
         /// <summary>

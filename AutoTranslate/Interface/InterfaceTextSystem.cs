@@ -263,6 +263,13 @@ namespace AutoTranslate.Interface
                 try
                 {
                     language = m_Service.InterfaceLanguageFor(text);
+                    if (language == null && m_Service.ChosenOnly)
+                    {
+                        // "Only the mods I choose": a text of no chosen mod or window stays as it is.
+                        m_Outbox[text] = "";
+                        continue;
+                    }
+                    if (language == Exclusions.MainLanguage) language = null;
                     hit = m_Service.TryGet(text, TextOrigin.Interface, language, out translated);
                 }
                 catch (Exception e)

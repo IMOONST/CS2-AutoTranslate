@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "exclusions.json을 저장할 수 없습니다 (로그 참조).",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "모드 창을 클릭하여 표시 방식을 선택하세요. Esc 또는 마우스 오른쪽 버튼을 누르면 나갑니다.",
  "Translation is off: your choice is saved and shows once you turn it on.": "번역이 꺼져 있습니다. 선택은 저장되며 번역을 켜면 적용됩니다.",
- "Saved. Turn translation on to see it.": "저장했습니다. 보려면 번역을 켜세요."
+ "Saved. Turn translation on to see it.": "저장했습니다. 보려면 번역을 켜세요.",
+ "What to translate": "번역 대상",
+ "Only the mods I choose": "선택한 모드만",
+ "Everything": "전체",
+ "Use the click mode on a mod's window or options page to choose it.": "클릭 모드에서 모드의 창이나 옵션 페이지를 클릭해 선택하세요.",
+ "Translate ({name})": "번역 ({name})",
+ "Translate": "번역",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "선택한 모드만: 플로팅 버튼의 클릭 모드로 모드를 선택하기 전에는 아무것도 번역하지 않습니다(모드의 창이나 옵션 페이지를 클릭하고 언어 선택). 선택하면 그 모드의 창과 옵션 등 모든 텍스트가 번역됩니다. 전체: 사용자의 언어가 없는 모든 모드를 번역합니다(선택한 모드는 원문 그대로 두거나 다른 언어로 설정할 수 있음)."
 }

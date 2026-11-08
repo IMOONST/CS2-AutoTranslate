@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "Не удалось сохранить exclusions.json (см. журнал).",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "Нажмите на окно мода, чтобы выбрать, как его показывать. Esc или правый клик — выход.",
  "Translation is off: your choice is saved and shows once you turn it on.": "Перевод выключен: ваш выбор сохранён и появится, как только вы его включите.",
- "Saved. Turn translation on to see it.": "Сохранено. Включите перевод, чтобы увидеть."
+ "Saved. Turn translation on to see it.": "Сохранено. Включите перевод, чтобы увидеть.",
+ "What to translate": "Что переводить",
+ "Only the mods I choose": "Только выбранные моды",
+ "Everything": "Всё",
+ "Use the click mode on a mod's window or options page to choose it.": "Выберите мод в режиме щелчка: щёлкните его окно или страницу настроек.",
+ "Translate ({name})": "Переводить ({name})",
+ "Translate": "Переводить",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "Только выбранные моды: ничего не переводится, пока вы не выберете мод в режиме щелчка плавающей кнопки (щёлкните его окно или страницу настроек и выберите язык); тогда переводятся все тексты этого мода — его окна и настройки. Всё: переводится каждый мод без вашего языка (выбранные моды можно оставить в оригинале или перевести на другой язык)."
 }

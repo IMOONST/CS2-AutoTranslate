@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "exclusions.json を保存できませんでした（ログを参照）。",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "MOD のウィンドウをクリックして表示方法を選択します。Esc または右クリックで終了。",
  "Translation is off: your choice is saved and shows once you turn it on.": "翻訳はオフです。選択は保存され、オンにすると反映されます。",
- "Saved. Turn translation on to see it.": "保存しました。表示するには翻訳をオンにしてください。"
+ "Saved. Turn translation on to see it.": "保存しました。表示するには翻訳をオンにしてください。",
+ "What to translate": "翻訳する対象",
+ "Only the mods I choose": "選んだ MOD のみ",
+ "Everything": "すべて",
+ "Use the click mode on a mod's window or options page to choose it.": "クリックモードで MOD のウィンドウまたはオプション画面をクリックして選択します。",
+ "Translate ({name})": "翻訳する（{name}）",
+ "Translate": "翻訳する",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "選んだ MOD のみ：フローティングボタンのクリックモードで MOD を選ぶまで何も翻訳されません（ウィンドウまたはオプション画面をクリックして言語を選択）。選ぶと、その MOD のウィンドウとオプションを含むすべてのテキストが翻訳されます。すべて：あなたの言語がないすべての MOD を翻訳します（選んだ MOD は原文のままや別の言語にもできます）。"
 }

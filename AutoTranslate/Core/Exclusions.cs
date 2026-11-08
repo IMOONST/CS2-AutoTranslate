@@ -95,7 +95,13 @@ namespace AutoTranslate.Core
         private Dictionary<string, string> m_ModLanguages = new Dictionary<string, string>(StringComparer.Ordinal);
         private Dictionary<string, string> m_TextLanguages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>The language a mod is shown in (any of its names may match), or null for the main target.</summary>
+        /// <summary>A saved choice meaning "the main target language" (a picked mod in the "only the mods I choose" scope).</summary>
+        public const string MainLanguage = "*";
+
+        /// <summary>
+        /// The language a mod is shown in (any of its names may match): a code, <see cref="MainLanguage"/>, or null when
+        /// nothing was chosen for it.
+        /// </summary>
         public string LanguageForMod(string assemblyName, string displayName, string title)
         {
             if (m_ModLanguages.Count == 0) return null;

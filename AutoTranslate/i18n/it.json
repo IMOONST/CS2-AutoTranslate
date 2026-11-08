@@ -137,5 +137,12 @@
  "Could not save exclusions.json (see the log).": "Impossibile salvare exclusions.json (vedi il log).",
  "Click a mod window to choose how it is shown. Esc or right click to leave.": "Clicca sulla finestra di una mod per scegliere come viene mostrata. Esc o clic destro per uscire.",
  "Translation is off: your choice is saved and shows once you turn it on.": "La traduzione è disattivata: la tua scelta viene salvata e sarà visibile non appena la attivi.",
- "Saved. Turn translation on to see it.": "Salvato. Attiva la traduzione per vederlo."
+ "Saved. Turn translation on to see it.": "Salvato. Attiva la traduzione per vederlo.",
+ "What to translate": "Cosa tradurre",
+ "Only the mods I choose": "Solo le mod che scelgo",
+ "Everything": "Tutto",
+ "Use the click mode on a mod's window or options page to choose it.": "Usa la modalità clic sulla finestra o sulla pagina delle opzioni di una mod per sceglierla.",
+ "Translate ({name})": "Traduci ({name})",
+ "Translate": "Traduci",
+ "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).": "Solo le mod che scelgo: non viene tradotto nulla finché non scegli una mod con la modalità clic del pulsante mobile (fai clic sulla sua finestra o sulla pagina delle opzioni e scegli una lingua); poi vengono tradotti tutti i testi di quella mod, le sue finestre e le sue opzioni. Tutto: viene tradotta ogni mod senza la tua lingua (le mod scelte possono restare in originale o in un'altra lingua)."
 }

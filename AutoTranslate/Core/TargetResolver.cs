@@ -29,6 +29,8 @@ namespace AutoTranslate.Core
         public string Target = "";
         public OffReason Reason;
         public bool Interfaces;
+        /// <summary>Only the mods and windows the player picked are translated.</summary>
+        public bool ChosenOnly;
         public ProviderOptions Provider = new ProviderOptions();
 
         public bool SameAs(ServiceConfig other)
@@ -38,6 +40,7 @@ namespace AutoTranslate.Core
                 && Target == other.Target
                 && Reason == other.Reason
                 && Interfaces == other.Interfaces
+                && ChosenOnly == other.ChosenOnly
                 && Provider.Kind == other.Provider.Kind
                 && Provider.ApiKey == other.Provider.ApiKey
                 && Provider.ServiceUrl == other.Provider.ServiceUrl
@@ -52,6 +55,7 @@ namespace AutoTranslate.Core
             return Enabled == other.Enabled
                 && Target == other.Target
                 && Reason == other.Reason
+                && ChosenOnly == other.ChosenOnly
                 && Provider.Kind == other.Provider.Kind
                 && Provider.ApiKey == other.Provider.ApiKey
                 && Provider.ServiceUrl == other.Provider.ServiceUrl
@@ -142,6 +146,7 @@ namespace AutoTranslate.Core
             }
 
             config.Interfaces = setting.TranslateInterfaces;
+            config.ChosenOnly = setting.Scope == Setting.TranslateScope.ChosenOnly;
             config.Provider = new ProviderOptions
             {
                 Kind = setting.Provider,

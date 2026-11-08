@@ -27,6 +27,15 @@ namespace AutoTranslate
         public const string kMaintenanceGroup = "Maintenance";
         public const string kStatusGroup = "Status";
 
+        /// <summary>What is translated.</summary>
+        public enum TranslateScope
+        {
+            /// <summary>Only the mods and windows the player picked (click mode); everything else keeps its text.</summary>
+            ChosenOnly = 0,
+            /// <summary>Every mod without the player's language (the mods and windows picked can still differ).</summary>
+            Everything = 1,
+        }
+
         /// <summary>How the target language is chosen.</summary>
         public enum TargetLanguageMode
         {
@@ -54,6 +63,10 @@ namespace AutoTranslate
         /// </summary>
         [SettingsUISection(kSection, kGeneralGroup)]
         public bool Enabled { get; set; }
+
+        /// <summary>Only the mods picked with the click mode (default), or every mod.</summary>
+        [SettingsUISection(kSection, kGeneralGroup)]
+        public TranslateScope Scope { get; set; }
 
         [SettingsUISection(kSection, kGeneralGroup)]
         public TargetLanguageMode TargetMode { get; set; }
@@ -321,6 +334,7 @@ namespace AutoTranslate
         {
             Enabled = true;
             TargetMode = TargetLanguageMode.Auto;
+            Scope = TranslateScope.ChosenOnly;
             ManualLanguage = "ar";
             InterfaceLanguage = "auto";
             TranslateInterfaces = true;
@@ -567,6 +581,14 @@ namespace AutoTranslate
             Option(nameof(Setting.StatusSaved), "Translation memory", "ذاكرة الترجمة",
                 "Machine translations saved permanently for the current language (and the size of the file). A saved text is never sent to the engine again; new translations are written to disk within about 2 seconds.",
                 "الترجمات الآلية المحفوظة بشكل دائم للغة الحالية (وحجم الملف). النص المحفوظ لا يُرسل إلى المحرك مرة أخرى أبداً؛ وتُكتب الترجمات الجديدة على القرص خلال ثانيتين تقريباً.");
+
+            Option(nameof(Setting.Scope), "What to translate", "وش يترجم",
+                "Only the mods I choose: nothing is translated until you pick a mod with the floating button's click mode (click its window or its options page and choose a language); then all of that mod's texts are translated, its windows and its options. " +
+                "Everything: every mod without your language is translated (the mods you pick can still be kept original or set to another language).",
+                "بس المودات اللي أختارها: ما يُترجم شيء حتى تختار مود بوضع التحكم بالضغط في الأيقونة العائمة (اضغط على نافذته أو صفحة إعداداته واختر لغة)، وبعدها تُترجم كل نصوص هذا المود: نوافذه وإعداداته. " +
+                "كل شيء: يُترجم كل مود ما فيه لغتك (والمودات اللي تختارها تقدر تبقيها بالأصل أو بلغة ثانية).");
+            Add(s.GetEnumValueLocaleID(Setting.TranslateScope.ChosenOnly), "Only the mods I choose", "بس المودات اللي أختارها");
+            Add(s.GetEnumValueLocaleID(Setting.TranslateScope.Everything), "Everything", "كل شيء");
 
             Option(nameof(Setting.TargetMode), "Target language", "اللغة الهدف",
                 "Automatic: the game's language when it is not English; otherwise the Windows language when it is not English; otherwise nothing is translated. " +

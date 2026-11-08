@@ -14,6 +14,8 @@ Install it, start the game, and the mods you use appear in your language. Not on
 - **Translates other mods**: the localization of every installed mod that has no translation for your language, and the text mod panels and windows draw directly.
 - **Any untranslated text on screen**: text the game or a mod builds while you play, with no translation of its own.
 - **Never changes the game's own translations.**
+- **You choose what is translated**: by default only the mods you pick. Click a mod's window or its options page with the floating button and choose a language, and everything of that mod is translated: its windows and its options. Prefer the old way? Switch "What to translate" to **Everything** and every mod without your language is translated.
+- **Its own interface in 13 languages** (the game's twelve plus Arabic): it follows the game's language, your Windows language, or the one you pick.
 - **Picks the language by itself**: the game's language, otherwise your Windows language, or choose from **43 languages**, including languages the game does not offer (Arabic, Hindi, Indonesian, Vietnamese, Ukrainian and more).
 - **Translation engines**: Free automatic (default: two free Google endpoints, switching when one refuses), Google, DeepL (your key), LibreTranslate (your own or a public server), Microsoft Translator (your key).
 - **Permanent translation memory**: every machine translation is saved in a local file and fully loaded at startup. Known texts appear instantly, even offline, and no text is ever sent for translation twice.
@@ -56,6 +58,8 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - **يترجم المودات الأخرى**: نصوص الترجمة لكل مود ما فيه لغتك، والنصوص اللي تعرضها لوحات ونوافذ المودات مباشرة.
 - **أي نص غير مترجم على الشاشة**: النصوص اللي تبنيها اللعبة أو المودات وقت اللعب وما لها ترجمة.
 - **ما يغيّر ترجمات اللعبة نفسها.**
+- **أنت تختار وش يترجم**: افتراضياً يترجم بس المودات اللي تختارها. اضغط بالأيقونة العائمة على نافذة المود أو صفحة إعداداته واختر لغة، ويترجم كل شي فيه: نوافذه وإعداداته. تبي الطريقة القديمة؟ غيّر «وش يترجم» إلى **كل شيء** ويترجم كل مود ما فيه لغتك.
+- **واجهته نفسها بـ 13 لغة** (لغات اللعبة الـ12 والعربية): تتبع لغة اللعبة، أو لغة ويندوز، أو اللي تختارها.
 - **يختار اللغة بنفسه**: لغة اللعبة، وإلا لغة ويندوز، أو تختار من **43 لغة** منها لغات ما توفرها اللعبة مثل العربية.
 - **محركات الترجمة**: مجاني تلقائي (الافتراضي: خدمتان مجانيتان من Google يتنقّل بينهما)، Google، DeepL (بمفتاحك)، LibreTranslate، Microsoft Translator (بمفتاحك).
 - **ذاكرة ترجمة دائمة**: كل ترجمة تنحفظ في ملف على جهازك وتتحمّل كاملة عند التشغيل. النصوص المعروفة تظهر فوراً حتى بدون إنترنت، وما يُرسل أي نص للترجمة مرتين.
