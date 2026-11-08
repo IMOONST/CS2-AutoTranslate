@@ -2,7 +2,7 @@
 <Publish>
 	<!--No ModId: Paradox Mods assigns it on the first publish (PublishNewMod) and the toolchain writes it here.-->
 	<DisplayName Value="Auto Translate: Any Mod" />
-	<ShortDescription Value="Translates your mods, and any untranslated text on screen, into your language automatically. 43 languages, permanent offline memory, per-mod control." />
+	<ShortDescription Value="Translates the mods you pick into your language: click a mod's window or options page and choose. 43 languages, offline memory, interface in 13 languages." />
 	<LongDescription>
 # Auto Translate: Any Mod
 
