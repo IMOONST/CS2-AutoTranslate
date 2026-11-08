@@ -96,6 +96,11 @@ With an online engine, **only the texts to be translated** are sent to the servi
 	<Screenshot Value="Properties/Screenshot2.png" />
 	<Screenshot Value="Properties/Screenshot3.png" />
 	<Screenshot Value="Properties/Screenshot4.png" />
+	<Screenshot Value="Properties/Screenshot5.png" />
+	<Screenshot Value="Properties/Screenshot6.png" />
+	<Screenshot Value="Properties/Screenshot7.png" />
+	<Screenshot Value="Properties/Screenshot8.png" />
+	<Screenshot Value="Properties/Screenshot9.png" />
 	<Tag Value="Code Mod" />
 	<ExternalLink Type="github" Url="https://github.com/IMOONST/CS2-AutoTranslate" />
 	<ModVersion Value="1.0.0" />
