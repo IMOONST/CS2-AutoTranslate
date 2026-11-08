@@ -47,6 +47,10 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - Excluded by default: Sign Builder: Saudi Edition and Arabic Street Names (they bring their own Arabic), and Auto Translate itself.
 - Safe to remove at any time: nothing is saved into your city.
 
+## Support
+
+**Enjoying the mod?** It's free and always will be. If you'd like to say thanks, you can [buy me a coffee on PayPal](https://paypal.me/MeshaalFayez) ☕ — a star on GitHub or a rating here means just as much.
+
 ---
 
 # مترجم المودات التلقائي
@@ -90,6 +94,10 @@ With an online engine, **only the texts to be translated** are sent to the servi
 - الترجمة الآلية مو مثالية، وتقدر تصحّح أي نص بملفات الترجمة اليدوية.
 - مستثنى افتراضياً: Sign Builder: Saudi Edition و Arabic Street Names (فيها عربي جاهز)، والمترجم نفسه.
 - تقدر تشيله في أي وقت بأمان: ما يحفظ شي داخل مدينتك.
+
+## الدعم
+
+**عجبك المود؟** مجاني وبيبقى مجاني. وإذا حاب تقول شكراً، تقدر [تدعمني بقهوة على PayPal](https://paypal.me/MeshaalFayez) ☕، ونجمة على GitHub أو تقييم هنا يفرق معي بنفس القدر.
 	</LongDescription>
 	<Thumbnail Value="Properties/Thumbnail.png" />
 	<!--Screenshots are added by the user from the game (see README-PUBLISH.md at the repository root).-->
@@ -104,6 +112,7 @@ With an online engine, **only the texts to be translated** are sent to the servi
 	<Screenshot Value="Properties/Screenshot9.png" />
 	<Tag Value="Code Mod" />
 	<ExternalLink Type="github" Url="https://github.com/IMOONST/CS2-AutoTranslate" />
+	<ExternalLink Type="paypal" Url="https://paypal.me/MeshaalFayez" />
 	<ModVersion Value="1.0.0" />
 	<GameVersion Value="1.6.*" />
 	<ChangeLog>
